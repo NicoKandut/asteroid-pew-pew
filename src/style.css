@@ -1,0 +1,33 @@
+* {
+  box-sizing: border-box;
+}
+
+header {
+  display: flex;
+  justify-content: end;
+  gap: 1rem;
+
+  > div {
+    min-width: 4rem;
+    text-align: right;
+  }
+}
+
+html {
+  padding: unset;
+  height: 100%;
+}
+
+body {
+  margin: unset;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  flex: 1;
+}
