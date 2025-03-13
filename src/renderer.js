@@ -44,7 +44,7 @@ export const initRenderer = () => {
 
 export const render = () => {
   // TODO: remove
-  randomizeGoemetry();
+  randomizeGeometry();
 
   updateGeometry();
 
@@ -119,7 +119,7 @@ const createVertexAttribute = (name, components) => {
   return attribute;
 };
 
-const randomizeGoemetry = () => {
+const randomizeGeometry = () => {
   geometries.forEach((g) => {
     let v1_x = Math.random() * 2 - 1;
     let v1_y = Math.random() * 2 - 1;
