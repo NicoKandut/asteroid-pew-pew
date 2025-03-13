@@ -1,4 +1,4 @@
-import { addGeometry, render } from "./renderer.js";
+import { initRenderer, render } from "./renderer.js";
 
 let paused = false;
 
@@ -12,7 +12,9 @@ let updatesLastSecond = 0;
 let framesLastSecond = 0;
 
 const main = () => {
+  initRenderer();
   lastFrameTime = performance.now();
+  lastSummaryTime = lastFrameTime;
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
