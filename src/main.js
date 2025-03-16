@@ -10,6 +10,8 @@ import * as renderer from "./renderer/2d.js";
 
 let paused = false;
 
+let canvas = document.getElementsByTagName("canvas")[0];
+let entityCountView = document.getElementById("entity-count");
 let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
 let targetFpsView = document.getElementById("target-fps");
@@ -36,8 +38,33 @@ const main = () => {
   lastSummaryTime = lastFrameTime;
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      paused = !paused;
+    event.preventDefault();
+    event.stopPropagation();
+    switch (event.key) {
+      case "Escape":
+        paused = !paused;
+        break;
+      case " ":
+        if (spaceship) {
+          addBullet(
+            spaceship.transform.position.x,
+            spaceship.transform.position.y,
+            spaceship.transform.rotation
+          );
+        }
+        break;
+    }
+  });
+
+  document.addEventListener("mousemove", (event) => {
+    const x_canvas = event.clientX - canvas.getBoundingClientRect().left;
+    const y_canvas = event.clientY - canvas.getBoundingClientRect().top;
+
+    // rotation from spaceship to mouse
+    if (spaceship) {
+      const dx = x_canvas - spaceship.transform.position.x;
+      const dy = y_canvas - spaceship.transform.position.y;
+      spaceship.transform.rotation = Math.atan2(dy, dx);
     }
   });
 
@@ -49,12 +76,13 @@ const main = () => {
     desired_delta_time = 1000 / Number(event.target.value);
   });
 
+  addSpaceship(canvas.width / 2, canvas.height / 2, 0);
+
   setInterval(() => {
     addAsteroid(100, 100, 0);
     addBullet(200, 100, 0);
     addRocket(300, 100, 0);
-    addSpaceship(400, 100, 0);
-  }, 1000);
+  }, 100);
 
   requestAnimationFrame(doFrame);
 };
@@ -77,6 +105,9 @@ const doFrame = () => {
   }
 
   if (now - lastSummaryTime >= 1000) {
+    entityCountView.innerText = `${
+      asteroids.length + bullets.length + rockets.length + (spaceship ? 1 : 0)
+    }`;
     fpsView.innerText = `${framesLastSecond}`;
     upsView.innerText = `${updatesLastSecond}`;
 
@@ -128,9 +159,6 @@ const update = (deltaTime) => {
   }
 
   if (spaceship) {
-    spaceship.transform.position.x -= deltaTime / 100;
-    spaceship.transform.position.y += deltaTime / 10;
-    spaceship.transform.rotation += deltaTime / 300;
     renderer.updateEntity(
       renderer.SPACESHIP,
       spaceship.id,

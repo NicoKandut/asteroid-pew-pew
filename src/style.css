@@ -8,6 +8,8 @@ header {
   gap: 1rem;
 
   > div {
+    display: flex;
+    gap: 4px;
     min-width: 4rem;
     text-align: right;
   }
