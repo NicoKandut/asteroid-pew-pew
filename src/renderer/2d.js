@@ -18,13 +18,14 @@ const asteroid = {
 const bullet = {
   color: "#ffff00",
   type: "line",
-  length: 3,
+  length: 10,
+  strokeWidth: 2,
 };
 
 const rocket = {
   color: "#ff0000",
   type: "triangle",
-  radius: 1.5,
+  radius: 10,
 };
 
 const spaceship = {
@@ -41,6 +42,13 @@ const entities = {
   [SPACESHIP]: [],
 };
 
+const entityData = {
+  [ASTEROID]: asteroid,
+  [BULLET]: bullet,
+  [ROCKET]: rocket,
+  [SPACESHIP]: spaceship,
+};
+
 // init
 export const init = () => {
   console.info("renderer inititalized");
@@ -52,7 +60,9 @@ export const render = () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const type in entities) {
-    context.fillStyle = type.color;
+    context.fillStyle = entityData[type].color;
+    context.strokeStyle = entityData[type].color;
+    context.lineWidth = entityData[type]?.strokeWidth ?? 0;
     for (const entity of entities[type]) {
       switch (type) {
         case ASTEROID:
@@ -102,7 +112,7 @@ const drawBullet = (position, rotation) => {
 };
 
 const drawRocket = (position, rotation) => {
-  const third = (2 * Math.PI) / 3;
+  const third = (2 * Math.PI) / 8;
   context.beginPath();
   context.moveTo(
     position.x + rocket.radius * Math.cos(rotation),
@@ -115,6 +125,10 @@ const drawRocket = (position, rotation) => {
   context.lineTo(
     position.x - rocket.radius * Math.cos(rotation - third),
     position.y - rocket.radius * Math.sin(rotation - third)
+  );
+  context.lineTo(
+    position.x + rocket.radius * Math.cos(rotation),
+    position.y + rocket.radius * Math.sin(rotation)
   );
   context.stroke();
 };

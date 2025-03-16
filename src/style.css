@@ -30,4 +30,5 @@ canvas {
   display: block;
   width: 100%;
   flex: 1;
+  background-color: black;
 }
