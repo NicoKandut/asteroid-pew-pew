@@ -12,8 +12,14 @@ let paused = false;
 
 let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
+let targetFpsView = document.getElementById("target-fps");
+let targetUpsView = document.getElementById("target-ups");
+
+let desired_delta_time = 1000 / 120;
+let desired_frame_time = 1000 / 60;
 
 let lastFrameTime = 0;
+let lastUpdateTime = 0;
 let lastSummaryTime = 0;
 
 let updatesLastSecond = 0;
@@ -35,6 +41,14 @@ const main = () => {
     }
   });
 
+  targetFpsView.addEventListener("change", (event) => {
+    desired_frame_time = 1000 / Number(event.target.value);
+  });
+
+  targetUpsView.addEventListener("change", (event) => {
+    desired_delta_time = 1000 / Number(event.target.value);
+  });
+
   setInterval(() => {
     addAsteroid(100, 100, 0);
     addBullet(200, 100, 0);
@@ -47,18 +61,20 @@ const main = () => {
 
 const doFrame = () => {
   const now = performance.now();
-  const deltaTime = now - lastFrameTime;
 
-  // TODO: decouple and make controllable
   if (!paused) {
-    update(deltaTime);
-    ++updatesLastSecond;
+    while (lastUpdateTime + desired_delta_time / 2 <= now) {
+      update(desired_delta_time);
+      ++updatesLastSecond;
+      lastUpdateTime += desired_delta_time;
+    }
 
-    renderer.render();
-    ++framesLastSecond;
+    if (lastFrameTime + desired_frame_time / 2 <= now) {
+      renderer.render();
+      ++framesLastSecond;
+      lastFrameTime = now;
+    }
   }
-
-  lastFrameTime = now;
 
   if (now - lastSummaryTime >= 1000) {
     fpsView.innerText = `${framesLastSecond}`;
@@ -70,6 +86,7 @@ const doFrame = () => {
     lastSummaryTime = now;
   }
 
+  // framerate is controlled by the browser
   requestAnimationFrame(doFrame);
 };
 
