@@ -1,5 +1,3 @@
-const MAX_GEOMETRIES = 3000;
-
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
 
@@ -8,45 +6,42 @@ export const BULLET = "bullet";
 export const ROCKET = "rocket";
 export const SPACESHIP = "spaceship";
 
-// resources
-const asteroid = {
-  color: "#ffffff",
-  type: "circle",
-  radius: 10,
+// RENDER IDENTIFIERS
+let nextId = 0;
+const getId = () => `${nextId++}`;
+
+// RENDER DETAILS
+const renderDetails = {
+  [ASTEROID]: {
+    color: "#ffffff",
+    type: "circle",
+    radius: 10,
+  },
+  [BULLET]: {
+    color: "#ffff00",
+    type: "line",
+    length: 10,
+    strokeWidth: 2,
+  },
+  [ROCKET]: {
+    color: "#ff0000",
+    type: "triangle",
+    radius: 10,
+  },
+  [SPACESHIP]: {
+    color: "#00ff00",
+    type: "rectangle",
+    width: 10,
+    height: 20,
+  },
 };
 
-const bullet = {
-  color: "#ffff00",
-  type: "line",
-  length: 10,
-  strokeWidth: 2,
-};
-
-const rocket = {
-  color: "#ff0000",
-  type: "triangle",
-  radius: 10,
-};
-
-const spaceship = {
-  color: "#00ff00",
-  type: "rectangle",
-  width: 10,
-  height: 20,
-};
-
+// CURRENT RENDERED ENTITIES
 const entities = {
-  [ASTEROID]: [],
-  [BULLET]: [],
-  [ROCKET]: [],
-  [SPACESHIP]: [],
-};
-
-const entityData = {
-  [ASTEROID]: asteroid,
-  [BULLET]: bullet,
-  [ROCKET]: rocket,
-  [SPACESHIP]: spaceship,
+  [ASTEROID]: {},
+  [BULLET]: {},
+  [ROCKET]: {},
+  [SPACESHIP]: {},
 };
 
 // init
@@ -60,10 +55,13 @@ export const render = () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const type in entities) {
-    context.fillStyle = entityData[type].color;
-    context.strokeStyle = entityData[type].color;
-    context.lineWidth = entityData[type]?.strokeWidth ?? 0;
-    for (const entity of entities[type]) {
+    // configure drawing for entity type
+    context.fillStyle = renderDetails[type].color;
+    context.strokeStyle = renderDetails[type].color;
+    context.lineWidth = renderDetails[type]?.strokeWidth ?? 0;
+
+    // draw each entity of the type
+    for (const entity of Object.values(entities[type])) {
       switch (type) {
         case ASTEROID:
           drawAsteroid(entity.position, entity.rotation);
@@ -82,80 +80,67 @@ export const render = () => {
   }
 };
 
+// RENDER ENTITY MANAGEMENT
 export const addEntity = (type, position, rotation) => {
-  entities[type].push({ position, rotation });
-  return entities[type].length - 1;
+  const id = getId();
+  entities[type][id] = { position, rotation };
+  return id;
+};
+export const removeEntity = (type, id) => {
+  delete entities[type][id];
+};
+export const updateEntity = (type, id, position, rotation) => {
+  entities[type][id].position = position;
+  entities[type][id].rotation = rotation;
 };
 
-export const removeEntity = (type, index) => {
-  entities[type].splice(index, 1);
-};
-
-export const updateEntity = (type, index, position, rotation) => {
-  entities[type][index].position = position;
-  entities[type][index].rotation = rotation;
-};
-
+// DRAWING
 const drawAsteroid = (position, _rotation) => {
+  const { radius } = renderDetails[ASTEROID];
   context.beginPath();
-  context.arc(position.x, position.y, asteroid.radius, 0, 2 * Math.PI);
+  context.arc(position.x, position.y, radius, 0, 2 * Math.PI);
   context.fill();
 };
-
 const drawBullet = (position, rotation) => {
-  let c = (Math.cos(rotation) * bullet.length) / 2;
-  let s = (Math.sin(rotation) * bullet.length) / 2;
+  const { length } = renderDetails[BULLET];
+  const c = (Math.cos(rotation) * length) / 2;
+  const s = (Math.sin(rotation) * length) / 2;
   context.beginPath();
   context.moveTo(position.x + c, position.y + s);
   context.lineTo(position.x - c, position.y - s);
   context.stroke();
 };
-
 const drawRocket = (position, rotation) => {
+  const { radius } = renderDetails[ROCKET];
   const third = (2 * Math.PI) / 8;
   context.beginPath();
   context.moveTo(
-    position.x + rocket.radius * Math.cos(rotation),
-    position.y + rocket.radius * Math.sin(rotation)
+    position.x + radius * Math.cos(rotation),
+    position.y + radius * Math.sin(rotation)
   );
   context.lineTo(
-    position.x - rocket.radius * Math.cos(rotation + third),
-    position.y - rocket.radius * Math.sin(rotation + third)
+    position.x - radius * Math.cos(rotation + third),
+    position.y - radius * Math.sin(rotation + third)
   );
   context.lineTo(
-    position.x - rocket.radius * Math.cos(rotation - third),
-    position.y - rocket.radius * Math.sin(rotation - third)
+    position.x - radius * Math.cos(rotation - third),
+    position.y - radius * Math.sin(rotation - third)
   );
   context.lineTo(
-    position.x + rocket.radius * Math.cos(rotation),
-    position.y + rocket.radius * Math.sin(rotation)
+    position.x + radius * Math.cos(rotation),
+    position.y + radius * Math.sin(rotation)
   );
   context.stroke();
 };
-
 const drawSpaceship = (position, rotation) => {
-  let c = Math.cos(rotation);
-  let s = Math.sin(rotation);
+  const { width } = renderDetails[SPACESHIP];
+  const c = Math.cos(rotation);
+  const s = Math.sin(rotation);
   context.beginPath();
-  context.moveTo(
-    position.x + spaceship.width * c,
-    position.y + spaceship.width * s
-  );
-  context.lineTo(
-    position.x - spaceship.width * s,
-    position.y + spaceship.width * c
-  );
-  context.lineTo(
-    position.x - spaceship.width * c,
-    position.y - spaceship.width * s
-  );
-  context.lineTo(
-    position.x + spaceship.width * s,
-    position.y - spaceship.width * c
-  );
-  context.lineTo(
-    position.x + spaceship.width * c,
-    position.y + spaceship.width * s
-  );
+  context.moveTo(position.x + width * c, position.y + width * s);
+  context.lineTo(position.x - width * s, position.y + width * c);
+  context.lineTo(position.x - width * c, position.y - width * s);
+  context.lineTo(position.x + width * s, position.y - width * c);
+  context.lineTo(position.x + width * c, position.y + width * s);
   context.fill();
 };
