@@ -23,7 +23,9 @@ let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
 let targetFpsView = document.getElementById("target-fps");
 let targetUpsView = document.getElementById("target-ups");
+let menuView = document.getElementById("menu");
 let pauseResumeButton = document.getElementById("pause-resume");
+let debugVelocityCheckbox = document.getElementById("debug-velocity");
 
 let desired_delta_time = 1000 / 120;
 let desired_frame_time = 1000 / 60;
@@ -69,8 +71,6 @@ const main = () => {
 
 const setupInput = () => {
   document.addEventListener("keydown", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
     switch (event.key) {
       case "Escape":
         togglePause();
@@ -110,24 +110,32 @@ const setupInput = () => {
     desired_delta_time = 1000 / Number(event.target.value);
   });
 
+  debugVelocityCheckbox.addEventListener("change", (event) => {
+    renderer.setVelocityDrawing(event.target.checked);
+  });
+
   pauseResumeButton.addEventListener("click", togglePause);
 };
 
 const doFrame = () => {
   const now = performance.now();
 
-  if (!paused) {
-    while (lastUpdateTime + desired_delta_time / 2 <= now) {
+  // updates
+  while (lastUpdateTime + desired_delta_time / 2 <= now) {
+    if (!paused) {
       update(desired_delta_time);
       ++updatesLastSecond;
-      lastUpdateTime += desired_delta_time;
     }
+    lastUpdateTime += desired_delta_time;
+  }
 
-    if (lastFrameTime + desired_frame_time / 2 <= now) {
+  // render
+  if (lastFrameTime + desired_frame_time / 2 <= now) {
+    if (!paused) {
       renderer.render();
       ++framesLastSecond;
-      lastFrameTime = now;
     }
+    lastFrameTime = now;
   }
 
   if (now - lastSummaryTime >= 1000) {
@@ -162,27 +170,19 @@ const update = (deltaTime) => {
     asteroid.position.x += deltaTime * asteroid.velocity.x;
     asteroid.position.y += deltaTime * asteroid.velocity.y;
     asteroid.rotation += deltaTime * asteroid.angularVelocity;
-    renderer.updateEntity(
-      renderer.ASTEROID,
-      asteroid.id,
-      asteroid.position,
-      asteroid.rotation
-    );
     if (outOfBounds(asteroid.position)) {
       asteroid.remove = true;
     }
+
+    // wrap around
+    // asteroid.position.x = (asteroid.position.x + canvas.width) % canvas.width;
+    // asteroid.position.y = (asteroid.position.y + canvas.height) % canvas.height;
   }
 
   for (const bullet of bullets) {
     bullet.position.x += deltaTime * bullet.velocity.x;
     bullet.position.y += deltaTime * bullet.velocity.y;
     bullet.rotation += deltaTime * bullet.angularVelocity;
-    renderer.updateEntity(
-      renderer.BULLET,
-      bullet.id,
-      bullet.position,
-      bullet.rotation
-    );
     if (outOfBounds(bullet.position)) {
       bullet.remove = true;
     }
@@ -192,12 +192,6 @@ const update = (deltaTime) => {
     rocket.position.x += deltaTime * rocket.velocity.x;
     rocket.position.y += deltaTime * rocket.velocity.y;
     rocket.rotation += deltaTime * rocket.angularVelocity;
-    renderer.updateEntity(
-      renderer.ROCKET,
-      rocket.id,
-      rocket.position,
-      rocket.rotation
-    );
     if (outOfBounds(rocket.position)) {
       rocket.remove = true;
     }
@@ -228,19 +222,15 @@ const update = (deltaTime) => {
   rockets = rockets.filter((rocket) => !rocket.remove);
 
   if (spaceship) {
-    renderer.updateEntity(
-      renderer.SPACESHIP,
-      spaceship.id,
-      spaceship.position,
-      spaceship.rotation
-    );
+    // renderer.updateEntity(renderer.SPACESHIP, spaceship.id, spaceship);
   }
 };
 
 // TODO: combine all these functions? They don't add much
 const addAsteroid = (position, rotation, velocity, angularVelocity) => {
-  const id = renderer.addEntity(renderer.ASTEROID, position, rotation);
-  asteroids.push({ id, position, rotation, velocity, angularVelocity });
+  const asteroid = { position, rotation, velocity, angularVelocity };
+  renderer.addEntity(renderer.ASTEROID, asteroid);
+  asteroids.push(asteroid);
 };
 
 const removeAsteroid = (asteroid) => {
@@ -249,8 +239,9 @@ const removeAsteroid = (asteroid) => {
 };
 
 const addBullet = (position, rotation, velocity, angularVelocity) => {
-  const id = renderer.addEntity(renderer.BULLET, position, rotation);
-  bullets.push({ id, position, rotation, velocity, angularVelocity });
+  const bullet = { position, rotation, velocity, angularVelocity };
+  renderer.addEntity(renderer.BULLET, bullet);
+  bullets.push(bullet);
 };
 
 const removeBullet = (bullet) => {
@@ -259,8 +250,9 @@ const removeBullet = (bullet) => {
 };
 
 const addRocket = (position, rotation, velocity, angularVelocity) => {
-  const id = renderer.addEntity(renderer.ROCKET, position, rotation);
-  rockets.push({ id, position, rotation, velocity, angularVelocity });
+  const rocket = { position, rotation, velocity, angularVelocity };
+  renderer.addEntity(renderer.ROCKET, rocket);
+  rockets.push(rocket);
 };
 
 const removeRocket = (rocket) => {
@@ -269,8 +261,8 @@ const removeRocket = (rocket) => {
 };
 
 const addSpaceship = (position, rotation, velocity, angularVelocity) => {
-  const id = renderer.addEntity(renderer.SPACESHIP, position, rotation);
-  spaceship = { id, position, rotation, velocity, angularVelocity };
+  spaceship = { position, rotation, velocity, angularVelocity };
+  renderer.addEntity(renderer.SPACESHIP, spaceship);
 };
 
 const removeSpaceship = (id) => {
@@ -281,6 +273,7 @@ const removeSpaceship = (id) => {
 const togglePause = () => {
   paused = !paused;
   pauseResumeButton.innerText = paused ? "Resume" : "Pause";
+  menuView.style.display = paused ? "flex" : "none";
 };
 
 main();

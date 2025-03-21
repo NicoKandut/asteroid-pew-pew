@@ -20,18 +20,28 @@
       <span id="ups">?</span> UPS
     </div>
   </header>
-  <canvas></canvas>
-  <section>
-    <label for="target-fps">
-      Target FPS
-      <input type="number" id="target-fps" value="60">
-    </label>
-    <label for="target-ups">
-      Target UPS
-      <input type="number" id="target-ups" value="120">
-    </label>
-    <button id="pause-resume">Pause</button>
-  </section>
+  <main>
+    <canvas></canvas>
+    <section id="hints">
+      <div><kbd>Esc</kbd> Pause</div>
+      <div><kbd>Space</kbd> Shoot</div>
+    </section>
+    <section id="menu">
+      <label for="target-fps">
+        Target FPS
+        <input type="number" id="target-fps" value="60">
+      </label>
+      <label for="target-ups">
+        Target UPS
+        <input type="number" id="target-ups" value="120">
+      </label>
+      <label for="debug-velocity">
+        Draw velocity vectors
+        <input type="checkbox" id="debug-velocity">
+      </label>
+      <button id="pause-resume">Pause</button>
+    </section>
+  </main>
   <script type="module" src="/src/main.js"></script>
 </body>
 

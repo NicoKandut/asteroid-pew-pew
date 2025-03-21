@@ -17,7 +17,8 @@ header {
 
 html {
   padding: unset;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 body {
@@ -25,27 +26,76 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1rem;
-  gap: 1rem;
+}
+
+main {
+  position: relative;
+  display: block;
+  flex-grow: 1;
 }
 
 canvas {
   display: block;
   width: 100%;
-  flex: 1;
+  height: 100%;
   background-color: black;
 }
 
-section {
+#hints {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
   gap: 1rem;
+  color: white;
+  width: 100%;
+}
+
+kbd {
+  background-color: white;
+  color: black;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+#menu {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: #0008;
+  backdrop-filter: blur(2px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 label {
+  padding: 0.5rem 1rem;
   display: block;
+  background-color: black;
+  color: white;
+  border: 2px white solid;
+
+  > input[type="number"] {
+    width: 4rem;
+    color: white;
+    background-color: black;
+    border: none;
+  }
 }
 
-input[type="number"] {
-  width: 4rem;
+
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: black;
+  color: white;
+  border: 2px white solid;
+  border-radius: unset;
 }
