@@ -86,10 +86,12 @@ const main = () => {
   //   randomAsteroidSize()
   // );
 
-  renderer.setVelocityDrawing(true);
+  // renderer.setVelocityDrawing(true);
 
   requestAnimationFrame(doFrame);
 };
+
+let bulletIndex = 0;
 
 const setupInput = () => {
   document.addEventListener("keydown", (event) => {
@@ -101,12 +103,36 @@ const setupInput = () => {
         // TODO: decouple bullet spawn-rate from keypress input-rate
         if (spaceship) {
           const rotation = spaceship.rotation + (Math.random() - 0.5) * 0.1;
-          addBullet(
-            { x: spaceship.position.x, y: spaceship.position.y },
-            rotation,
-            { x: Math.cos(rotation), y: Math.sin(rotation) },
-            0
-          );
+          const leftOffset = {
+            x: 10 * Math.cos(rotation + Math.PI / 2),
+            y: 10 * Math.sin(rotation + Math.PI / 2),
+          };
+          const rightOffset = {
+            x: 10 * Math.cos(rotation - Math.PI / 2),
+            y: 10 * Math.sin(rotation - Math.PI / 2),
+          };
+          if (bulletIndex % 2 === 0) {
+            addBullet(
+              {
+                x: spaceship.position.x + leftOffset.x,
+                y: spaceship.position.y + leftOffset.y,
+              },
+              rotation,
+              { x: Math.cos(rotation), y: Math.sin(rotation) },
+              0
+            );
+          } else {
+            addBullet(
+              {
+                x: spaceship.position.x + rightOffset.x,
+                y: spaceship.position.y + rightOffset.y,
+              },
+              rotation,
+              { x: Math.cos(rotation), y: Math.sin(rotation) },
+              0
+            );
+          }
+          bulletIndex++;
         }
         break;
     }
@@ -225,8 +251,10 @@ const update = (deltaTime) => {
     for (const asteroid of asteroids) {
       if (checkIntersectionAsteroidAsteroid(bullet, asteroid)) {
         bullet.remove = true;
-        asteroid.velocity.x = 0.1 * bullet.velocity.x + 0.9 * asteroid.velocity.x;
-        asteroid.velocity.y = 0.1 * bullet.velocity.y + 0.9 * asteroid.velocity.y;
+        asteroid.velocity.x =
+          0.1 * bullet.velocity.x + 0.9 * asteroid.velocity.x;
+        asteroid.velocity.y =
+          0.1 * bullet.velocity.y + 0.9 * asteroid.velocity.y;
       }
     }
   }
