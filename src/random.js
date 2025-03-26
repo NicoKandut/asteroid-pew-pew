@@ -18,3 +18,8 @@ export const randomVelocity = (scale) => {
 export const randomAngularVelocity = (scale) => {
   return (Math.random() * 2 - 1) * scale;
 };
+
+export const randomAsteroidSize = () => {
+  const sizes = [10, 20, 30];
+  return sizes[Math.floor(Math.random() * sizes.length)];
+};

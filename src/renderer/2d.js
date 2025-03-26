@@ -73,6 +73,9 @@ export const removeEntity = (type, id) => {
   delete entities[type][id];
 };
 
+const img = new Image();
+img.src = "/public/rock.webp";
+
 // DRAWING
 export const render = () => {
   // resize
@@ -89,12 +92,15 @@ export const render = () => {
     context.strokeStyle = renderDetails[type].color;
     context.lineWidth = renderDetails[type]?.strokeWidth ?? 0;
 
+    if (type === ASTEROID) {
+      context.fillStyle = context.createPattern(img, "repeat");
+    }
     context.beginPath();
     // draw each entity of the type
     for (const entity of Object.values(entities[type])) {
       switch (type) {
         case ASTEROID:
-          drawAsteroid(entity.position, entity.rotation);
+          drawAsteroid(entity.position, entity.rotation, entity.radius);
           break;
         case BULLET:
           drawBullet(entity.position, entity.rotation);
@@ -107,6 +113,7 @@ export const render = () => {
           break;
       }
     }
+    context.fill();
     context.stroke();
   }
 
@@ -119,7 +126,6 @@ export const render = () => {
         const { position, velocity } = entity;
         const { x, y } = position;
         const { x: vx, y: vy } = velocity;
-        debugger;
         context.moveTo(x, y);
         context.lineTo(x + vx * 200, y + vy * 200);
       }
@@ -128,8 +134,7 @@ export const render = () => {
   }
 };
 
-const drawAsteroid = (position, _rotation) => {
-  const { radius } = renderDetails[ASTEROID];
+const drawAsteroid = (position, _rotation, radius) => {
   context.moveTo(position.x + radius, position.y);
   context.arc(position.x, position.y, radius, 0, 2 * Math.PI);
 };

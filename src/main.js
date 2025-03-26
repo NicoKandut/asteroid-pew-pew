@@ -1,7 +1,10 @@
+import { checkIntersectionAsteroidAsteroid } from "./collisionDetection.js";
+import { normalize, reflect } from "./renderer/linalg.js";
 import {
   randomAngularVelocity,
   randomPosition,
   randomVelocity,
+  randomAsteroidSize,
 } from "./random.js";
 import * as renderer from "./renderer/2d.js";
 
@@ -62,9 +65,28 @@ const main = () => {
       randomPosition(),
       0,
       randomVelocity(0.1 * Math.random() + 0.01),
-      randomAngularVelocity(0.001)
+      randomAngularVelocity(0.001),
+      randomAsteroidSize()
     );
   }, 100);
+
+  // addAsteroid(
+  //   { x: 100, y: 100 },
+  //   0,
+  //   { x: 0.1, y: 0 },
+  //   randomAngularVelocity(0.001),
+  //   randomAsteroidSize()
+  // );
+
+  // addAsteroid(
+  //   { x: 300, y: 105 },
+  //   0,
+  //   { x: -0.1, y: 0 },
+  //   randomAngularVelocity(0.001),
+  //   randomAsteroidSize()
+  // );
+
+  renderer.setVelocityDrawing(true);
 
   requestAnimationFrame(doFrame);
 };
@@ -156,12 +178,12 @@ const doFrame = () => {
 };
 
 const outOfBounds = (position) => {
-  // TODO: add padding to only remove entities that are completely off-screen
+  const padding = 50;
   return (
-    position.x < 0 ||
-    position.x > canvas.width ||
-    position.y < 0 ||
-    position.y > canvas.height
+    position.x < 0 - padding ||
+    position.x > canvas.width + padding ||
+    position.y < 0 - padding ||
+    position.y > canvas.height + padding
   );
 };
 
@@ -172,6 +194,20 @@ const update = (deltaTime) => {
     asteroid.rotation += deltaTime * asteroid.angularVelocity;
     if (outOfBounds(asteroid.position)) {
       asteroid.remove = true;
+    }
+
+    for (const asteroid2 of asteroids) {
+      if (asteroid === asteroid2) {
+        continue;
+      }
+      if (checkIntersectionAsteroidAsteroid(asteroid, asteroid2)) {
+        const normal = normalize({
+          x: asteroid2.position.x - asteroid.position.x,
+          y: asteroid2.position.y - asteroid.position.y,
+        });
+        // TODO: correct impulse calculation
+        asteroid.velocity = reflect(asteroid.velocity, normal);
+      }
     }
 
     // wrap around
@@ -185,6 +221,13 @@ const update = (deltaTime) => {
     bullet.rotation += deltaTime * bullet.angularVelocity;
     if (outOfBounds(bullet.position)) {
       bullet.remove = true;
+    }
+    for (const asteroid of asteroids) {
+      if (checkIntersectionAsteroidAsteroid(bullet, asteroid)) {
+        bullet.remove = true;
+        asteroid.velocity.x = 0.1 * bullet.velocity.x + 0.9 * asteroid.velocity.x;
+        asteroid.velocity.y = 0.1 * bullet.velocity.y + 0.9 * asteroid.velocity.y;
+      }
     }
   }
 
@@ -227,8 +270,22 @@ const update = (deltaTime) => {
 };
 
 // TODO: combine all these functions? They don't add much
-const addAsteroid = (position, rotation, velocity, angularVelocity) => {
-  const asteroid = { position, rotation, velocity, angularVelocity };
+const addAsteroid = (position, rotation, velocity, angularVelocity, radius) => {
+  const asteroid = {
+    position,
+    rotation,
+    velocity,
+    angularVelocity,
+    mass: 10,
+    radius,
+  };
+
+  for (const other of asteroids) {
+    if (checkIntersectionAsteroidAsteroid(asteroid, other)) {
+      return;
+    }
+  }
+
   renderer.addEntity(renderer.ASTEROID, asteroid);
   asteroids.push(asteroid);
 };
@@ -239,7 +296,14 @@ const removeAsteroid = (asteroid) => {
 };
 
 const addBullet = (position, rotation, velocity, angularVelocity) => {
-  const bullet = { position, rotation, velocity, angularVelocity };
+  const bullet = {
+    position,
+    rotation,
+    velocity,
+    angularVelocity,
+    mass: 1,
+    radius: 5,
+  };
   renderer.addEntity(renderer.BULLET, bullet);
   bullets.push(bullet);
 };
