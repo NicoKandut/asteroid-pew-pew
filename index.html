@@ -1,48 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asteroid Pew Pew</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asteroid Pew Pew</title>
-  <link rel="stylesheet" href="/src/style.css">
-</head>
-
-<body>
-  <header>
-    <div>
-      <span id="entity-count">?</span>Entities
-    </div>
-    <div>
-      <span id="fps">?</span> FPS
-    </div>
-    <div>
-      <span id="ups">?</span> UPS
-    </div>
-  </header>
-  <main>
-    <canvas></canvas>
-    <section id="hints">
-      <div><kbd>Esc</kbd> Pause</div>
-      <div><kbd>Space</kbd> Shoot</div>
-    </section>
-    <section id="menu">
-      <label for="target-fps">
-        Target FPS
-        <input type="number" id="target-fps" value="60">
-      </label>
-      <label for="target-ups">
-        Target UPS
-        <input type="number" id="target-ups" value="120">
-      </label>
-      <label for="debug-velocity">
-        Draw velocity vectors
-        <input type="checkbox" id="debug-velocity">
-      </label>
-      <button id="pause-resume">Pause</button>
-    </section>
-  </main>
-  <script type="module" src="/src/main.js"></script>
-</body>
-
+  <body>
+    <header>
+      <div><span id="entity-count">?</span>Entities</div>
+      <div><span id="fps">?</span> FPS</div>
+      <div><span id="ups">?</span> UPS</div>
+    </header>
+    <main>
+      <canvas></canvas>
+      <section id="overlay"></section>
+      <section id="hints">
+        <div><kbd>Esc</kbd> Pause</div>
+        <div><kbd>WASD</kbd> Move</div>
+        <div><kbd>Space</kbd> Shoot</div>
+        <div><kbd>Q</kbd> Rocket</div>
+      </section>
+      <section id="stats">
+        <div>Fire rate: <span id="fire-rate">10.0</span></div>
+      </section>
+      <section id="menu">
+        <label for="target-fps">
+          Target FPS
+          <input type="number" id="target-fps" value="60" />
+        </label>
+        <label for="target-ups">
+          Target UPS
+          <input type="number" id="target-ups" value="120" />
+        </label>
+        <label for="debug-velocity">
+          Draw velocity vectors
+          <input type="checkbox" id="debug-velocity" />
+        </label>
+        <button id="pause-resume">Pause</button>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>

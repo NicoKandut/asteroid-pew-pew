@@ -1,11 +1,10 @@
-import { checkIntersectionAsteroidAsteroid } from "./collisionDetection.js";
-import { normalize, reflect } from "./renderer/linalg.js";
 import {
-  randomAngularVelocity,
-  randomPosition,
-  randomVelocity,
-  randomAsteroidSize,
-} from "./random.js";
+  checkAndResolveCollision,
+  checkCollision,
+  createPhysicsEntity,
+  velocityVerlet,
+} from "./features/rigidBodyDynamics.js";
+import { randomAngularVelocity, randomPosition, randomVelocity, randomAsteroidSize } from "./random.js";
 import * as renderer from "./renderer/2d.js";
 
 // DONE: spawn spaceship
@@ -15,6 +14,16 @@ import * as renderer from "./renderer/2d.js";
 // TODO: add orbiting shield things
 // TODO: add big asteroid that fracture
 // TODO: add rockets + spline paths
+
+// in kg
+const BULLET_MASS = 100;
+const SPACESHIP_MASS = 100;
+const ASTEROID_MASS = 1000;
+
+const calculateAsteroidMass = (radius) => {
+  const density = 3.5;
+  return (4 / 3) * Math.PI * radius ** 3 * density;
+};
 
 // game state
 let paused = false;
@@ -29,6 +38,7 @@ let targetUpsView = document.getElementById("target-ups");
 let menuView = document.getElementById("menu");
 let pauseResumeButton = document.getElementById("pause-resume");
 let debugVelocityCheckbox = document.getElementById("debug-velocity");
+let fireRateView = document.getElementById("fire-rate");
 
 let desired_delta_time = 1000 / 120;
 let desired_frame_time = 1000 / 60;
@@ -37,13 +47,32 @@ let lastFrameTime = 0;
 let lastUpdateTime = 0;
 let lastSummaryTime = 0;
 
+// statistics
 let updatesLastSecond = 0;
 let framesLastSecond = 0;
 
+// entities
 let asteroids = [];
 let bullets = [];
 let rockets = [];
 let spaceship = null;
+
+// shooting
+let shootingBullets = false;
+let lastBulletTime = 0;
+let bulletCooldown = 10; // in ms
+
+// rockets
+let shootingRockets = false;
+let rocketCooldown = 1000; // in ms
+let lastRocketTime = 0;
+
+let movement = {
+  forward: false,
+  backward: false,
+  left: false,
+  right: false,
+};
 
 const main = () => {
   renderer.init();
@@ -52,46 +81,30 @@ const main = () => {
 
   setupInput();
 
-  addSpaceship(
-    { x: canvas.width / 2, y: canvas.height / 2 },
-    0,
-    { x: 0, y: 0 },
-    0
-  );
+  addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
 
   // TDOD: do this in a more game-like way. This is a placeholder
   setInterval(() => {
-    addAsteroid(
-      randomPosition(),
-      0,
-      randomVelocity(0.1 * Math.random() + 0.01),
-      randomAngularVelocity(0.001),
-      randomAsteroidSize()
-    );
+    if (asteroids.length < 100) {
+      addAsteroid(
+        randomPosition(),
+        0,
+        { x: 0, y: 0 },
+        randomVelocity(0.1 * Math.random() + 0.01),
+        randomAngularVelocity(0.001),
+        randomAsteroidSize()
+      );
+    }
   }, 100);
 
-  // addAsteroid(
-  //   { x: 100, y: 100 },
-  //   0,
-  //   { x: 0.1, y: 0 },
-  //   randomAngularVelocity(0.001),
-  //   randomAsteroidSize()
-  // );
-
-  // addAsteroid(
-  //   { x: 300, y: 105 },
-  //   0,
-  //   { x: -0.1, y: 0 },
-  //   randomAngularVelocity(0.001),
-  //   randomAsteroidSize()
-  // );
+  initUI();
 
   // renderer.setVelocityDrawing(true);
-
   requestAnimationFrame(doFrame);
 };
 
 let bulletIndex = 0;
+let now = performance.now();
 
 const setupInput = () => {
   document.addEventListener("keydown", (event) => {
@@ -100,40 +113,53 @@ const setupInput = () => {
         togglePause();
         break;
       case " ":
-        // TODO: decouple bullet spawn-rate from keypress input-rate
-        if (spaceship) {
-          const rotation = spaceship.rotation + (Math.random() - 0.5) * 0.1;
-          const leftOffset = {
-            x: 10 * Math.cos(rotation + Math.PI / 2),
-            y: 10 * Math.sin(rotation + Math.PI / 2),
-          };
-          const rightOffset = {
-            x: 10 * Math.cos(rotation - Math.PI / 2),
-            y: 10 * Math.sin(rotation - Math.PI / 2),
-          };
-          if (bulletIndex % 2 === 0) {
-            addBullet(
-              {
-                x: spaceship.position.x + leftOffset.x,
-                y: spaceship.position.y + leftOffset.y,
-              },
-              rotation,
-              { x: Math.cos(rotation), y: Math.sin(rotation) },
-              0
-            );
-          } else {
-            addBullet(
-              {
-                x: spaceship.position.x + rightOffset.x,
-                y: spaceship.position.y + rightOffset.y,
-              },
-              rotation,
-              { x: Math.cos(rotation), y: Math.sin(rotation) },
-              0
-            );
-          }
-          bulletIndex++;
-        }
+        shootingBullets = true;
+        break;
+      case "q":
+        shootingRockets = true;
+        break;
+      case "ArrowUp":
+      case "w":
+        movement.forward = true;
+        break;
+      case "ArrowDown":
+      case "s":
+        movement.backward = true;
+        break;
+      case "ArrowLeft":
+      case "a":
+        movement.left = true;
+        break;
+      case "ArrowRight":
+      case "d":
+        movement.right = true;
+        break;
+    }
+  });
+
+  document.addEventListener("keyup", (event) => {
+    switch (event.key) {
+      case " ":
+        shootingBullets = false;
+        break;
+      case "q":
+        shootingRockets = false;
+        break;
+      case "ArrowUp":
+      case "w":
+        movement.forward = false;
+        break;
+      case "ArrowDown":
+      case "s":
+        movement.backward = false;
+        break;
+      case "ArrowLeft":
+      case "a":
+        movement.left = false;
+        break;
+      case "ArrowRight":
+      case "d":
+        movement.right = false;
         break;
     }
   });
@@ -165,8 +191,12 @@ const setupInput = () => {
   pauseResumeButton.addEventListener("click", togglePause);
 };
 
+const initUI = () => {
+  fireRateView.innerText = `${Math.round(1000 / bulletCooldown)}`;
+};
+
 const doFrame = () => {
-  const now = performance.now();
+  now = performance.now();
 
   // updates
   while (lastUpdateTime + desired_delta_time / 2 <= now) {
@@ -187,9 +217,7 @@ const doFrame = () => {
   }
 
   if (now - lastSummaryTime >= 1000) {
-    entityCountView.innerText = `${
-      asteroids.length + bullets.length + rockets.length + (spaceship ? 1 : 0)
-    }`;
+    entityCountView.innerText = `${asteroids.length + bullets.length + rockets.length + (spaceship ? 1 : 0)}`;
     fpsView.innerText = `${framesLastSecond}`;
     upsView.innerText = `${updatesLastSecond}`;
 
@@ -203,6 +231,74 @@ const doFrame = () => {
   requestAnimationFrame(doFrame);
 };
 
+const processEvents = (deltaTime) => {
+  // bullets
+  if (shootingBullets && now - lastBulletTime >= bulletCooldown && spaceship) {
+    const rotation = spaceship.rotation + (Math.random() - 0.5) * 0.1;
+    const leftOffset = {
+      x: 10 * Math.cos(rotation + Math.PI / 2),
+      y: 10 * Math.sin(rotation + Math.PI / 2),
+    };
+    const rightOffset = {
+      x: 10 * Math.cos(rotation - Math.PI / 2),
+      y: 10 * Math.sin(rotation - Math.PI / 2),
+    };
+    if (bulletIndex % 2 === 0) {
+      addBullet(
+        {
+          x: spaceship.position.x + leftOffset.x,
+          y: spaceship.position.y + leftOffset.y,
+        },
+        rotation,
+        { x: Math.cos(rotation), y: Math.sin(rotation) },
+        0
+      );
+    } else {
+      addBullet(
+        {
+          x: spaceship.position.x + rightOffset.x,
+          y: spaceship.position.y + rightOffset.y,
+        },
+        rotation,
+        { x: Math.cos(rotation), y: Math.sin(rotation) },
+        0
+      );
+    }
+    bulletIndex++;
+    lastBulletTime = now;
+  }
+
+  // bullets
+  if (shootingRockets && now - lastRocketTime >= rocketCooldown && spaceship) {
+    addRocket(
+      {
+        x: spaceship.position.x,
+        y: spaceship.position.y,
+      },
+      spaceship.rotation,
+      { x: Math.cos(spaceship.rotation), y: Math.sin(spaceship.rotation) },
+      0
+    );
+    lastRocketTime = now;
+  }
+
+  // movement
+  if (spaceship) {
+    if (movement.forward) {
+      spaceship.force.y -= 0.0005 * deltaTime;
+    }
+    if (movement.backward) {
+      spaceship.force.y += 0.0005 * deltaTime;
+    }
+    if (movement.left) {
+      spaceship.force.x -= 0.0005 * deltaTime;
+    }
+    if (movement.right) {
+      spaceship.force.x += 0.0005 * deltaTime;
+    }
+  }
+};
+
 const outOfBounds = (position) => {
   const padding = 50;
   return (
@@ -214,25 +310,17 @@ const outOfBounds = (position) => {
 };
 
 const update = (deltaTime) => {
+  processEvents(deltaTime);
+
   for (const asteroid of asteroids) {
-    asteroid.position.x += deltaTime * asteroid.velocity.x;
-    asteroid.position.y += deltaTime * asteroid.velocity.y;
-    asteroid.rotation += deltaTime * asteroid.angularVelocity;
+    velocityVerlet(asteroid, deltaTime);
     if (outOfBounds(asteroid.position)) {
       asteroid.remove = true;
     }
 
     for (const asteroid2 of asteroids) {
-      if (asteroid === asteroid2) {
-        continue;
-      }
-      if (checkIntersectionAsteroidAsteroid(asteroid, asteroid2)) {
-        const normal = normalize({
-          x: asteroid2.position.x - asteroid.position.x,
-          y: asteroid2.position.y - asteroid.position.y,
-        });
-        // TODO: correct impulse calculation
-        asteroid.velocity = reflect(asteroid.velocity, normal);
+      if (asteroid !== asteroid2) {
+        checkAndResolveCollision(asteroid, asteroid2, 1, true);
       }
     }
 
@@ -242,19 +330,13 @@ const update = (deltaTime) => {
   }
 
   for (const bullet of bullets) {
-    bullet.position.x += deltaTime * bullet.velocity.x;
-    bullet.position.y += deltaTime * bullet.velocity.y;
-    bullet.rotation += deltaTime * bullet.angularVelocity;
+    velocityVerlet(bullet, deltaTime);
     if (outOfBounds(bullet.position)) {
       bullet.remove = true;
     }
     for (const asteroid of asteroids) {
-      if (checkIntersectionAsteroidAsteroid(bullet, asteroid)) {
+      if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
         bullet.remove = true;
-        asteroid.velocity.x =
-          0.1 * bullet.velocity.x + 0.9 * asteroid.velocity.x;
-        asteroid.velocity.y =
-          0.1 * bullet.velocity.y + 0.9 * asteroid.velocity.y;
       }
     }
   }
@@ -268,6 +350,18 @@ const update = (deltaTime) => {
     }
   }
 
+  velocityVerlet(spaceship, deltaTime);
+
+  // automatic brake
+  if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
+    spaceship.velocity.x *= 0.99;
+    spaceship.velocity.y *= 0.99;
+  }
+
+  cleanUpEntities(asteroids);
+};
+
+const cleanUpEntities = (entities) => {
   // TODO: clean up entity removal. very clumsy atm.
   // remove entities that are out of bounds
   asteroids.forEach((asteroid) => {
@@ -291,25 +385,23 @@ const update = (deltaTime) => {
   asteroids = asteroids.filter((asteroid) => !asteroid.remove);
   bullets = bullets.filter((bullet) => !bullet.remove);
   rockets = rockets.filter((rocket) => !rocket.remove);
-
-  if (spaceship) {
-    // renderer.updateEntity(renderer.SPACESHIP, spaceship.id, spaceship);
-  }
 };
 
 // TODO: combine all these functions? They don't add much
-const addAsteroid = (position, rotation, velocity, angularVelocity, radius) => {
-  const asteroid = {
-    position,
-    rotation,
-    velocity,
-    angularVelocity,
-    mass: 10,
-    radius,
-  };
+const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius) => {
+  const asteroid = createPhysicsEntity();
+  asteroid.position = position;
+  asteroid.rotation = rotation;
+  asteroid.acceleration = acceleration;
+  asteroid.velocity = velocity;
+  asteroid.angularVelocity = angularVelocity;
+  asteroid.mass = calculateAsteroidMass(radius);
+  asteroid.radius = radius;
+  asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
 
+  // do not spawn asteroids inside each other
   for (const other of asteroids) {
-    if (checkIntersectionAsteroidAsteroid(asteroid, other)) {
+    if (checkCollision(asteroid, other)) {
       return;
     }
   }
@@ -318,27 +410,17 @@ const addAsteroid = (position, rotation, velocity, angularVelocity, radius) => {
   asteroids.push(asteroid);
 };
 
-const removeAsteroid = (asteroid) => {
-  renderer.removeEntity(renderer.ASTEROID, asteroid.id);
-  asteroids.splice(asteroids.indexOf(asteroid), 1);
-};
-
 const addBullet = (position, rotation, velocity, angularVelocity) => {
-  const bullet = {
-    position,
-    rotation,
-    velocity,
-    angularVelocity,
-    mass: 1,
-    radius: 5,
-  };
+  const bullet = createPhysicsEntity();
+  bullet.position = position;
+  bullet.rotation = rotation;
+  bullet.velocity = velocity;
+  bullet.angularVelocity = angularVelocity;
+  bullet.mass = BULLET_MASS;
+  bullet.radius = 5;
+  bullet.inertia = (2 / 5) * bullet.mass * bullet.radius ** 2;
   renderer.addEntity(renderer.BULLET, bullet);
   bullets.push(bullet);
-};
-
-const removeBullet = (bullet) => {
-  renderer.removeEntity(renderer.BULLET, bullet.id);
-  bullets.splice(bullets.indexOf(bullet), 1);
 };
 
 const addRocket = (position, rotation, velocity, angularVelocity) => {
@@ -347,19 +429,16 @@ const addRocket = (position, rotation, velocity, angularVelocity) => {
   rockets.push(rocket);
 };
 
-const removeRocket = (rocket) => {
-  renderer.removeEntity(renderer.ROCKET, rocket.id);
-  rockets.splice(rockets.indexOf(rocket), 1);
-};
-
 const addSpaceship = (position, rotation, velocity, angularVelocity) => {
-  spaceship = { position, rotation, velocity, angularVelocity };
+  spaceship = createPhysicsEntity();
+  spaceship.position = position;
+  spaceship.rotation = rotation;
+  spaceship.velocity = velocity;
+  spaceship.angularVelocity = angularVelocity;
+  spaceship.mass = 10;
+  spaceship.drag = 1;
+  spaceship.maxVelocity = 0.5;
   renderer.addEntity(renderer.SPACESHIP, spaceship);
-};
-
-const removeSpaceship = (id) => {
-  renderer.removeEntity(renderer.SPACESHIP, id);
-  spaceship = null;
 };
 
 const togglePause = () => {

@@ -92,9 +92,9 @@ export const render = () => {
     context.strokeStyle = renderDetails[type].color;
     context.lineWidth = renderDetails[type]?.strokeWidth ?? 0;
 
-    if (type === ASTEROID) {
-      context.fillStyle = context.createPattern(img, "repeat");
-    }
+    // if (type === ASTEROID) {
+    //   context.fillStyle = context.createPattern(img, "repeat");
+    // }
     context.beginPath();
     // draw each entity of the type
     for (const entity of Object.values(entities[type])) {
@@ -113,7 +113,7 @@ export const render = () => {
           break;
       }
     }
-    context.fill();
+    // context.fill();
     context.stroke();
   }
 
