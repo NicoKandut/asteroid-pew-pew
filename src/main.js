@@ -1,4 +1,5 @@
 import {
+  applyForce,
   checkAndResolveCollision,
   checkCollision,
   createPhysicsEntity,
@@ -19,6 +20,7 @@ import * as renderer from "./renderer/2d.js";
 const BULLET_MASS = 100;
 const SPACESHIP_MASS = 100;
 const ASTEROID_MASS = 1000;
+const ROCKET_PIERCING = 3;
 
 const calculateAsteroidMass = (radius) => {
   const density = 3.5;
@@ -39,6 +41,7 @@ let menuView = document.getElementById("menu");
 let pauseResumeButton = document.getElementById("pause-resume");
 let debugVelocityCheckbox = document.getElementById("debug-velocity");
 let fireRateView = document.getElementById("fire-rate");
+let hpView = document.getElementById("hp");
 
 let desired_delta_time = 1000 / 120;
 let desired_frame_time = 1000 / 60;
@@ -60,11 +63,11 @@ let spaceship = null;
 // shooting
 let shootingBullets = false;
 let lastBulletTime = 0;
-let bulletCooldown = 10; // in ms
+let bulletCooldown = 20; // in ms
 
 // rockets
 let shootingRockets = false;
-let rocketCooldown = 1000; // in ms
+let rocketCooldown = 100; // in ms
 let lastRocketTime = 0;
 
 let movement = {
@@ -264,21 +267,37 @@ const processEvents = (deltaTime) => {
         0
       );
     }
+    const audioHit = new Audio("/hit.mp3");
+    audioHit.volume = 0.05;
+    audioHit.play();
     bulletIndex++;
     lastBulletTime = now;
   }
 
   // bullets
   if (shootingRockets && now - lastRocketTime >= rocketCooldown && spaceship) {
+    const splinePoints = [];
+
+    for (let i = 0; i < ROCKET_PIERCING; i++) {
+      const asteroid = asteroids[Math.floor(Math.random() * asteroids.length)];
+      asteroid.frozen = true;
+      splinePoints.push(asteroid.position);
+    }
+
     addRocket(
       {
         x: spaceship.position.x,
         y: spaceship.position.y,
       },
       spaceship.rotation,
-      { x: Math.cos(spaceship.rotation), y: Math.sin(spaceship.rotation) },
-      0
+      {
+        x: Math.cos(spaceship.rotation) * 0.2,
+        y: Math.sin(spaceship.rotation) * 0.2,
+      },
+      0,
+      splinePoints
     );
+
     lastRocketTime = now;
   }
 
@@ -337,20 +356,44 @@ const update = (deltaTime) => {
     for (const asteroid of asteroids) {
       if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
         bullet.remove = true;
+        asteroid.hp -= 1;
+        if (asteroid.hp <= 0) {
+          asteroid.remove = true;
+        }
       }
     }
   }
 
   for (const rocket of rockets) {
-    rocket.position.x += deltaTime * rocket.velocity.x;
-    rocket.position.y += deltaTime * rocket.velocity.y;
-    rocket.rotation += deltaTime * rocket.angularVelocity;
+    if (rocket.splinePoints.length == 0) {
+      rocket.remove = true;
+      continue;
+    }
+    const target = rocket.splinePoints[0];
+    const dx = target.x - rocket.position.x;
+    const dy = target.y - rocket.position.y;
+
+    applyForce(rocket, { x: dx * 0.0001, y: dy * 0.0001 }, 0);
+
+    velocityVerlet(rocket, deltaTime);
+    rocket.rotation = Math.atan2(rocket.velocity.y, rocket.velocity.x);
     if (outOfBounds(rocket.position)) {
       rocket.remove = true;
     }
   }
 
   velocityVerlet(spaceship, deltaTime);
+  for (const asteroid of asteroids) {
+    if (checkAndResolveCollision(spaceship, asteroid, 1, false)) {
+      spaceship.hp -= 1;
+      if (spaceship.hp >= 0) {
+        hpView.children.item(spaceship.hp).style.color = "black";
+      }
+      if (spaceship.hp <= 0) {
+        // TODO: game over
+      }
+    }
+  }
 
   // automatic brake
   if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
@@ -361,7 +404,7 @@ const update = (deltaTime) => {
   cleanUpEntities(asteroids);
 };
 
-const cleanUpEntities = (entities) => {
+const cleanUpEntities = () => {
   // TODO: clean up entity removal. very clumsy atm.
   // remove entities that are out of bounds
   asteroids.forEach((asteroid) => {
@@ -398,6 +441,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.mass = calculateAsteroidMass(radius);
   asteroid.radius = radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
+  asteroid.hp = 10;
 
   // do not spawn asteroids inside each other
   for (const other of asteroids) {
@@ -423,8 +467,15 @@ const addBullet = (position, rotation, velocity, angularVelocity) => {
   bullets.push(bullet);
 };
 
-const addRocket = (position, rotation, velocity, angularVelocity) => {
-  const rocket = { position, rotation, velocity, angularVelocity };
+const addRocket = (position, rotation, velocity, angularVelocity, splinePoints) => {
+  const rocket = createPhysicsEntity();
+  rocket.position = position;
+  rocket.rotation = rotation;
+  rocket.velocity = velocity;
+  rocket.angularVelocity = angularVelocity;
+  rocket.mass = BULLET_MASS;
+  rocket.radius = 5;
+  rocket.splinePoints = splinePoints;
   renderer.addEntity(renderer.ROCKET, rocket);
   rockets.push(rocket);
 };
@@ -438,6 +489,8 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.mass = 10;
   spaceship.drag = 1;
   spaceship.maxVelocity = 0.5;
+  spaceship.radius = 10;
+  spaceship.hp = 5;
   renderer.addEntity(renderer.SPACESHIP, spaceship);
 };
 

@@ -15,7 +15,8 @@
     </header>
     <main>
       <canvas></canvas>
-      <section id="overlay"></section>
+      <section id="overlay-blur"></section>
+      <section id="overlay-scanlines"></section>
       <section id="hints">
         <div><kbd>Esc</kbd> Pause</div>
         <div><kbd>WASD</kbd> Move</div>
@@ -24,6 +25,16 @@
       </section>
       <section id="stats">
         <div>Fire rate: <span id="fire-rate">10.0</span></div>
+        <div>
+          HP:
+          <ul id="hp">
+            <li>❤</li>
+            <li>❤</li>
+            <li>❤</li>
+            <li>❤</li>
+            <li>❤</li>
+          </ul>
+        </div>
       </section>
       <section id="menu">
         <label for="target-fps">

@@ -72,10 +72,14 @@ export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
   const overlap = a.radius + b.radius - distance;
 
   if (subOverlap) {
-    a.position.x -= normal.x * overlap;
-    a.position.y -= normal.y * overlap;
-    b.position.x += normal.x * overlap;
-    b.position.y += normal.y * overlap;
+    if (!a.frozen) {
+      a.position.x -= normal.x * overlap;
+      a.position.y -= normal.y * overlap;
+    }
+    if (!b.frozen) {
+      b.position.x += normal.x * overlap;
+      b.position.y += normal.y * overlap;
+    }
   }
   a.velocity.x -= momentum * elasticity * b.mass * normal.x;
   a.velocity.y -= momentum * elasticity * b.mass * normal.y;

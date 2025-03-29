@@ -100,7 +100,7 @@ export const render = () => {
     for (const entity of Object.values(entities[type])) {
       switch (type) {
         case ASTEROID:
-          drawAsteroid(entity.position, entity.rotation, entity.radius);
+          drawAsteroid(entity);
           break;
         case BULLET:
           drawBullet(entity.position, entity.rotation);
@@ -113,6 +113,7 @@ export const render = () => {
           break;
       }
     }
+
     // context.fill();
     context.stroke();
   }
@@ -134,9 +135,10 @@ export const render = () => {
   }
 };
 
-const drawAsteroid = (position, _rotation, radius) => {
-  context.moveTo(position.x + radius, position.y);
-  context.arc(position.x, position.y, radius, 0, 2 * Math.PI);
+const drawAsteroid = (asteroid) => {
+  context.moveTo(asteroid.position.x + asteroid.radius, asteroid.position.y);
+  context.arc(asteroid.position.x, asteroid.position.y, asteroid.radius, 0, 2 * Math.PI);
+  context.moveTo(asteroid.position.x, asteroid.position.y);
 };
 
 const drawBullet = (position, rotation) => {
