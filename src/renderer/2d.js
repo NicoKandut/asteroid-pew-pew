@@ -1,3 +1,5 @@
+import * as ht from '../features/hierarchicalTransformations';
+
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
 
@@ -7,6 +9,7 @@ export const BULLET = "bullet";
 export const ROCKET = "rocket";
 export const SPACESHIP = "spaceship";
 export const VELOCITY = "velocity";
+export const SPACESHIPPART = 'spaceshippart'
 
 // COLORS
 const WHITE = "#ffffff";
@@ -35,12 +38,17 @@ const renderDetails = {
   },
   [SPACESHIP]: {
     color: GREEN,
-    width: 10,
-    height: 20,
+    width: 40,
+    height: 40,
   },
   [VELOCITY]: {
     color: RED,
   },
+  [SPACESHIPPART]: {
+    color: GREEN, 
+    width: 20,
+    height: 20,
+  }
 };
 
 // CURRENT RENDERED ENTITIES
@@ -49,6 +57,7 @@ const entities = {
   [BULLET]: {},
   [ROCKET]: {},
   [SPACESHIP]: {},
+  [SPACESHIPPART]: {}
 };
 
 let velocityDrawing = false;
@@ -109,12 +118,13 @@ export const render = () => {
           drawRocket(entity.position, entity.rotation);
           break;
         case SPACESHIP:
-          drawSpaceship(entity.position, entity.rotation);
+        case SPACESHIPPART:
+          drawRectangular(entity, type);
           break;
       }
     }
 
-    // context.fill();
+    //context.fill();
     context.stroke();
   }
 
@@ -170,13 +180,18 @@ const drawRocket = (position, rotation) => {
   context.lineTo(p1.x, p1.y);
 };
 
-const drawSpaceship = (position, rotation) => {
-  const { width } = renderDetails[SPACESHIP];
-  const c = Math.cos(rotation);
-  const s = Math.sin(rotation);
-  context.moveTo(position.x + width * c, position.y + width * s);
-  context.lineTo(position.x - width * s, position.y + width * c);
-  context.lineTo(position.x - width * c, position.y - width * s);
-  context.lineTo(position.x + width * s, position.y - width * c);
-  context.lineTo(position.x + width * c, position.y + width * s);
+export const drawRectangular = (entity, type) => {
+  const {width, height} = renderDetails[type];
+  const transform = ht.calcTransform({x: entity.position.x, y: entity.position.y, rotation: entity.rotation}, entity.parent);
+  
+  const texture = new Image();
+  texture.src = entity.texture;
+
+  context.save();
+  context.translate(transform.x, transform.y);
+  context.rotate(transform.rotation);
+
+  context.drawImage(texture, -width / 2, -height / 2, width, height);
+
+  context.restore();
 };

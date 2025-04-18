@@ -491,7 +491,21 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.maxVelocity = 0.5;
   spaceship.radius = 10;
   spaceship.hp = 5;
+  spaceship.texture = '../assets/Spaceship.png';
   renderer.addEntity(renderer.SPACESHIP, spaceship);
+  
+
+  addSpaceshipPart ({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, '../assets/WingRight.png', spaceship);
+  addSpaceshipPart ({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, '../assets/WingLeft.png', spaceship);
+};
+
+const addSpaceshipPart = (position, rotation, type, image, parent) => {
+  const part = createPhysicsEntity();
+  part.position = position;
+  part.rotation = rotation;
+  part.texture = image;
+  part.parent = parent;
+  renderer.addEntity(type, part);
 };
 
 const togglePause = () => {
