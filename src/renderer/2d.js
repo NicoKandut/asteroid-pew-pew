@@ -156,7 +156,7 @@ export const render = () => {
 };
 
 const drawCircular = (entity) => {
-  const { radius, position, rotation, parent, texture } = entity;
+  const { radius,  texture } = entity;
   const transform = ht.calcTransform(entity);
 
   context.save();
@@ -226,14 +226,14 @@ const drawRocket = (entity) => {
 };
 
 export const drawRectangular = (entity) => {
-  const { width, height } = entity;
+  const { width, height, texture } = entity;
   const transform = ht.calcTransform(entity);
 
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
 
-  context.drawImage(entity.texture, -width / 2, -height / 2, width, height);
+  context.drawImage(texture, -width / 2, -height / 2, width, height);
 
   if (hitboxDrawing) {
     context.strokeStyle = "lime";
