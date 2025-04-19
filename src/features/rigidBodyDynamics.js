@@ -14,9 +14,11 @@ export const createPhysicsEntity = () => {
     inertia: 1,
     radius: 0,
     drag: 1,
+    height: 0,
+    width: 0,
     maxVelocity: 1,
     parent: null,
-    texture: ""
+    texture: null
   };
 };
 

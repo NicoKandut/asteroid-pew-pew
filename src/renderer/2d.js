@@ -10,6 +10,7 @@ export const ROCKET = "rocket";
 export const SPACESHIP = "spaceship";
 export const VELOCITY = "velocity";
 export const SPACESHIPPART = 'spaceshippart'
+export const FLAMES = 'flames'
 
 // COLORS
 const WHITE = "#ffffff";
@@ -24,8 +25,7 @@ const getId = () => `${nextId++}`;
 // RENDER DETAILS
 const renderDetails = {
   [ASTEROID]: {
-    color: WHITE,
-    radius: 10,
+    color: WHITE
   },
   [BULLET]: {
     color: YELLOW,
@@ -33,31 +33,30 @@ const renderDetails = {
     strokeWidth: 2,
   },
   [ROCKET]: {
-    color: RED,
-    radius: 10,
+    color: RED
   },
   [SPACESHIP]: {
-    color: GREEN,
-    width: 40,
-    height: 40,
+    color: GREEN
   },
   [VELOCITY]: {
     color: RED,
   },
   [SPACESHIPPART]: {
-    color: GREEN, 
-    width: 20,
-    height: 20,
+    color: GREEN
+  },
+  [FLAMES]: {
+    color: RED
   }
 };
 
 // CURRENT RENDERED ENTITIES
 const entities = {
+  [FLAMES]: {},
+  [SPACESHIP]: {},
+  [SPACESHIPPART]: {},
   [ASTEROID]: {},
   [BULLET]: {},
-  [ROCKET]: {},
-  [SPACESHIP]: {},
-  [SPACESHIPPART]: {}
+  [ROCKET]: {}
 };
 
 let velocityDrawing = false;
@@ -97,35 +96,29 @@ export const render = () => {
   // draw all entities by type
   for (const type in entities) {
     // configure drawing for entity type
-    context.fillStyle = renderDetails[type].color;
-    context.strokeStyle = renderDetails[type].color;
-    context.lineWidth = renderDetails[type]?.strokeWidth ?? 0;
 
-    // if (type === ASTEROID) {
-    //   context.fillStyle = context.createPattern(img, "repeat");
-    // }
-    context.beginPath();
-    // draw each entity of the type
     for (const entity of Object.values(entities[type])) {
       switch (type) {
         case ASTEROID:
-          drawAsteroid(entity);
+          drawCircular(entity);
           break;
         case BULLET:
-          drawBullet(entity.position, entity.rotation);
+          drawBullet(entity);
           break;
         case ROCKET:
-          drawRocket(entity.position, entity.rotation);
+          drawRocket(entity);
           break;
         case SPACESHIP:
         case SPACESHIPPART:
-          drawRectangular(entity, type);
+          drawRectangular(entity);
+          break;
+        case FLAMES: 
+          drawFlames(entity);
           break;
       }
     }
 
     //context.fill();
-    context.stroke();
   }
 
   if (velocityDrawing) {
@@ -146,52 +139,140 @@ export const render = () => {
 };
 
 const drawAsteroid = (asteroid) => {
+  context.save()
+  context.fillStyle = renderDetails[ASTEROID].color;
+  context.strokeStyle = renderDetails[ASTEROID].color;
+  context.lineWidth = renderDetails[ASTEROID]?.strokeWidth ?? 0;
+
+
+
+  context.beginPath();
   context.moveTo(asteroid.position.x + asteroid.radius, asteroid.position.y);
   context.arc(asteroid.position.x, asteroid.position.y, asteroid.radius, 0, 2 * Math.PI);
   context.moveTo(asteroid.position.x, asteroid.position.y);
+
+  context.stroke();
+
+  context.restore();
 };
 
-const drawBullet = (position, rotation) => {
-  const { length } = renderDetails[BULLET];
-  const c = (Math.cos(rotation) * length) / 2;
-  const s = (Math.sin(rotation) * length) / 2;
-  context.moveTo(position.x + c, position.y + s);
-  context.lineTo(position.x - c, position.y - s);
-};
-
-const drawRocket = (position, rotation) => {
-  const { radius } = renderDetails[ROCKET];
-  const third = (2 * Math.PI) / 8;
-  const p1 = {
-    x: position.x + radius * Math.cos(rotation),
-    y: position.y + radius * Math.sin(rotation),
-  };
-  const p2 = {
-    x: position.x - radius * Math.cos(rotation + third),
-    y: position.y - radius * Math.sin(rotation + third),
-  };
-  const p3 = {
-    x: position.x - radius * Math.cos(rotation - third),
-    y: position.y - radius * Math.sin(rotation - third),
-  };
-  context.moveTo(p1.x, p1.y);
-  context.lineTo(p2.x, p2.y);
-  context.lineTo(p3.x, p3.y);
-  context.lineTo(p1.x, p1.y);
-};
-
-export const drawRectangular = (entity, type) => {
-  const {width, height} = renderDetails[type];
-  const transform = ht.calcTransform({x: entity.position.x, y: entity.position.y, rotation: entity.rotation}, entity.parent);
-  
-  const texture = new Image();
-  texture.src = entity.texture;
+const drawCircular = (entity) => {
+  const {radius, position, rotation, parent, texture} = entity;
+  const transform = ht.calcTransform({x: position.x, y: position.y, rotation: rotation}, parent);
 
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
 
-  context.drawImage(texture, -width / 2, -height / 2, width, height);
+  context.drawImage(texture, -radius, -radius, radius * 2, radius * 2);
+
+  // context.fillStyle = renderDetails[ASTEROID].color;
+  // context.strokeStyle = renderDetails[ASTEROID].color;
+  // context.lineWidth = renderDetails[ASTEROID]?.strokeWidth ?? 0;
+
+  // context.beginPath();
+  // context.moveTo(0, 0);
+  // context.arc(0, 0, radius, 0, 2 * Math.PI);
+
+  // context.stroke();
+
+  context.restore();
+};
+
+const drawBullet = (entity) => {
+  context.fillStyle = renderDetails[BULLET].color;
+  context.strokeStyle = renderDetails[BULLET].color;
+  context.lineWidth = renderDetails[BULLET]?.strokeWidth ?? 0;
+
+  context.beginPath();
+
+  const { length } = renderDetails[BULLET];
+  const c = (Math.cos(entity.rotation) * length) / 2;
+  const s = (Math.sin(entity.rotation) * length) / 2;
+  context.moveTo(entity.position.x + c, entity.position.y + s);
+  context.lineTo(entity.position.x - c, entity.position.y - s);
+
+  context.stroke();
+};
+
+const drawRocket = (entity) => {
+  context.fillStyle = renderDetails[ROCKET].color;
+  context.strokeStyle = renderDetails[ROCKET].color;
+  context.lineWidth = renderDetails[ROCKET]?.strokeWidth ?? 0;
+
+  context.beginPath();
+
+  const { radius } = entity;
+  const third = (2 * Math.PI) / 8;
+  const p1 = {
+    x: entity.position.x + radius * Math.cos(entity.rotation),
+    y: entity.position.y + radius * Math.sin(entity.rotation),
+  };
+  const p2 = {
+    x: entity.position.x - radius * Math.cos(entity.rotation + third),
+    y: entity.position.y - radius * Math.sin(entity.rotation + third),
+  };
+  const p3 = {
+    x: entity.position.x - radius * Math.cos(entity.rotation - third),
+    y: entity.position.y - radius * Math.sin(entity.rotation - third),
+  };
+  context.moveTo(p1.x, p1.y);
+  context.lineTo(p2.x, p2.y);
+  context.lineTo(p3.x, p3.y);
+  context.lineTo(p1.x, p1.y);
+
+  context.stroke();
+};
+
+export const drawRectangular = (entity) => {
+  const {width, height} = entity;
+  const transform = ht.calcTransform({x: entity.position.x, y: entity.position.y, rotation: entity.rotation}, entity.parent);
+
+  context.save();
+  context.translate(transform.x, transform.y);
+  context.rotate(transform.rotation);
+
+  context.drawImage(entity.texture, -width / 2, -height / 2, width, height);
+
+  // context.strokeStyle = 'lime';
+  // context.lineWidth = 1;
+  // context.strokeRect(
+  //   -width / 2,
+  //   -height / 2,
+  //   width,
+  //   height
+  // );
+
+  context.restore();
+};
+
+export const drawFlames = (entity) => {
+  const {width, height} = entity;
+  const transform = ht.calcTransform({x: entity.position.x, y: entity.position.y, rotation: entity.rotation}, entity.parent);
+
+  context.save();
+  context.translate(transform.x, transform.y);
+  context.rotate(transform.rotation);
+
+  context.beginPath();
+  const flicker = Math.random() * 5;
+
+  context.moveTo(0, 0);
+  context.lineTo(-width, height + flicker);
+  context.lineTo(width, height + flicker);
+  context.closePath();
+
+  context.fillStyle = 'orange';
+  context.fill();
+
+  context.beginPath();
+  context.moveTo(0, 0); 
+  context.lineTo(-width / 2, height / 2 + flicker);
+  context.lineTo(width / 2, height / 2 + flicker);
+  context.closePath();
+
+  context.fillStyle = 'yellow';
+  context.fill();
 
   context.restore();
 };

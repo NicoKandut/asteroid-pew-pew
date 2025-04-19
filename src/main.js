@@ -88,7 +88,7 @@ const main = () => {
 
   // TDOD: do this in a more game-like way. This is a placeholder
   setInterval(() => {
-    if (asteroids.length < 100) {
+    if (asteroids.length < 10) {
       addAsteroid(
         randomPosition(),
         0,
@@ -443,6 +443,10 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
   asteroid.hp = 10;
 
+  const img = new Image();
+  img.src = '../assets/Asteroid1.png';
+  asteroid.texture = img;
+
   // do not spawn asteroids inside each other
   for (const other of asteroids) {
     if (checkCollision(asteroid, other)) {
@@ -474,7 +478,7 @@ const addRocket = (position, rotation, velocity, angularVelocity, splinePoints) 
   rocket.velocity = velocity;
   rocket.angularVelocity = angularVelocity;
   rocket.mass = BULLET_MASS;
-  rocket.radius = 5;
+  rocket.radius = 10;
   rocket.splinePoints = splinePoints;
   renderer.addEntity(renderer.ROCKET, rocket);
   rockets.push(rocket);
@@ -489,9 +493,14 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.mass = 10;
   spaceship.drag = 1;
   spaceship.maxVelocity = 0.5;
-  spaceship.radius = 10;
+  spaceship.height = 40;
+  spaceship.width = 40;
+  spaceship.radius = spaceship.width / 2;
   spaceship.hp = 5;
-  spaceship.texture = '../assets/Spaceship.png';
+
+  const image = new Image();
+  image.src = '../assets/Spaceship.png';
+  spaceship.texture = image;
   renderer.addEntity(renderer.SPACESHIP, spaceship);
   
 
@@ -503,10 +512,28 @@ const addSpaceshipPart = (position, rotation, type, image, parent) => {
   const part = createPhysicsEntity();
   part.position = position;
   part.rotation = rotation;
-  part.texture = image;
   part.parent = parent;
+  part.height = 20;
+  part.width = 20;
   renderer.addEntity(type, part);
+
+  const partImage = new Image();
+  partImage.src = image;
+  part.texture = partImage;
+
+  addFlames({ x: -5, y: 0 }, 1.5707964, part);
 };
+
+const addFlames = (position, rotation, parent) => {
+  const flame = createPhysicsEntity();
+  flame.position = position;
+  flame.rotation = rotation;
+  flame.parent = parent;
+  flame.height = 10;
+  flame.width = 5;
+
+  renderer.addEntity(renderer.FLAMES, flame);
+}
 
 const togglePause = () => {
   paused = !paused;
