@@ -1,4 +1,4 @@
-import * as ht from '../features/hierarchicalTransformations';
+import * as ht from "../features/SceneHierarchy";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -9,8 +9,8 @@ export const BULLET = "bullet";
 export const ROCKET = "rocket";
 export const SPACESHIP = "spaceship";
 export const VELOCITY = "velocity";
-export const SPACESHIPPART = 'spaceshippart'
-export const FLAMES = 'flames'
+export const SPACESHIPPART = "spaceshippart";
+export const FLAMES = "flames";
 
 // COLORS
 const WHITE = "#ffffff";
@@ -25,7 +25,7 @@ const getId = () => `${nextId++}`;
 // RENDER DETAILS
 const renderDetails = {
   [ASTEROID]: {
-    color: WHITE
+    color: WHITE,
   },
   [BULLET]: {
     color: YELLOW,
@@ -33,20 +33,20 @@ const renderDetails = {
     strokeWidth: 2,
   },
   [ROCKET]: {
-    color: RED
+    color: RED,
   },
   [SPACESHIP]: {
-    color: GREEN
+    color: GREEN,
   },
   [VELOCITY]: {
     color: RED,
   },
   [SPACESHIPPART]: {
-    color: GREEN
+    color: GREEN,
   },
   [FLAMES]: {
-    color: RED
-  }
+    color: RED,
+  },
 };
 
 // CURRENT RENDERED ENTITIES
@@ -56,10 +56,13 @@ const entities = {
   [SPACESHIPPART]: {},
   [ASTEROID]: {},
   [BULLET]: {},
-  [ROCKET]: {}
+  [ROCKET]: {},
 };
 
 let velocityDrawing = false;
+let hitboxDrawing = false;
+let trajectoryDrawing = false;
+
 
 // INITIALIZATION
 export const init = () => {
@@ -71,6 +74,14 @@ export const setVelocityDrawing = (draw) => {
   velocityDrawing = draw;
 };
 
+export const setDrawHitboxes = (draw) => {
+  hitboxDrawing = draw;
+};
+
+export const setDrawTrajectory = (draw) => {
+  trajectoryDrawing = draw;
+}
+
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
   entity.id = getId();
@@ -79,6 +90,7 @@ export const addEntity = (type, entity) => {
 
 export const removeEntity = (type, id) => {
   delete entities[type][id];
+  ht.removeTrajectory(id);
 };
 
 const img = new Image();
@@ -112,10 +124,12 @@ export const render = () => {
         case SPACESHIPPART:
           drawRectangular(entity);
           break;
-        case FLAMES: 
+        case FLAMES:
           drawFlames(entity);
           break;
       }
+
+      ht.addTrajectory(entity.id, ht.calcTransform(entity));
     }
 
     //context.fill();
@@ -136,29 +150,14 @@ export const render = () => {
       context.stroke();
     }
   }
-};
 
-const drawAsteroid = (asteroid) => {
-  context.save()
-  context.fillStyle = renderDetails[ASTEROID].color;
-  context.strokeStyle = renderDetails[ASTEROID].color;
-  context.lineWidth = renderDetails[ASTEROID]?.strokeWidth ?? 0;
-
-
-
-  context.beginPath();
-  context.moveTo(asteroid.position.x + asteroid.radius, asteroid.position.y);
-  context.arc(asteroid.position.x, asteroid.position.y, asteroid.radius, 0, 2 * Math.PI);
-  context.moveTo(asteroid.position.x, asteroid.position.y);
-
-  context.stroke();
-
-  context.restore();
+  if(trajectoryDrawing)
+    ht.drawTrajectory(context);
 };
 
 const drawCircular = (entity) => {
-  const {radius, position, rotation, parent, texture} = entity;
-  const transform = ht.calcTransform({x: position.x, y: position.y, rotation: rotation}, parent);
+  const { radius, position, rotation, parent, texture } = entity;
+  const transform = ht.calcTransform(entity);
 
   context.save();
   context.translate(transform.x, transform.y);
@@ -166,15 +165,17 @@ const drawCircular = (entity) => {
 
   context.drawImage(texture, -radius, -radius, radius * 2, radius * 2);
 
-  // context.fillStyle = renderDetails[ASTEROID].color;
-  // context.strokeStyle = renderDetails[ASTEROID].color;
-  // context.lineWidth = renderDetails[ASTEROID]?.strokeWidth ?? 0;
-
-  // context.beginPath();
-  // context.moveTo(0, 0);
-  // context.arc(0, 0, radius, 0, 2 * Math.PI);
-
-  // context.stroke();
+  if(hitboxDrawing)
+  {
+    context.strokeStyle = RED;
+    context.lineWidth = 1;
+  
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.arc(0, 0, radius, 0, 2 * Math.PI);
+  
+    context.stroke();
+  }
 
   context.restore();
 };
@@ -225,8 +226,8 @@ const drawRocket = (entity) => {
 };
 
 export const drawRectangular = (entity) => {
-  const {width, height} = entity;
-  const transform = ht.calcTransform({x: entity.position.x, y: entity.position.y, rotation: entity.rotation}, entity.parent);
+  const { width, height } = entity;
+  const transform = ht.calcTransform(entity);
 
   context.save();
   context.translate(transform.x, transform.y);
@@ -234,25 +235,23 @@ export const drawRectangular = (entity) => {
 
   context.drawImage(entity.texture, -width / 2, -height / 2, width, height);
 
-  // context.strokeStyle = 'lime';
-  // context.lineWidth = 1;
-  // context.strokeRect(
-  //   -width / 2,
-  //   -height / 2,
-  //   width,
-  //   height
-  // );
+  if (hitboxDrawing) {
+    context.strokeStyle = "lime";
+    context.lineWidth = 1;
+    context.strokeRect(-width / 2, -height / 2, width, height);
+  }
 
   context.restore();
 };
 
 export const drawFlames = (entity) => {
-  const {width, height} = entity;
-  const transform = ht.calcTransform({x: entity.position.x, y: entity.position.y, rotation: entity.rotation}, entity.parent);
+  const { width, height } = entity;
+  const transform = ht.calcTransform(entity);
 
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
+
 
   context.beginPath();
   const flicker = Math.random() * 5;
@@ -262,17 +261,23 @@ export const drawFlames = (entity) => {
   context.lineTo(width, height + flicker);
   context.closePath();
 
-  context.fillStyle = 'orange';
+  context.fillStyle = "orange";
   context.fill();
 
   context.beginPath();
-  context.moveTo(0, 0); 
+  context.moveTo(0, 0);
   context.lineTo(-width / 2, height / 2 + flicker);
   context.lineTo(width / 2, height / 2 + flicker);
   context.closePath();
 
-  context.fillStyle = 'yellow';
+  context.fillStyle = "yellow";
   context.fill();
+
+  if (hitboxDrawing) {
+    context.strokeStyle = "lime";
+    context.lineWidth = 1;
+    context.strokeRect(-width, 0, width * 2, height + flicker);
+  }
 
   context.restore();
 };

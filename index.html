@@ -45,12 +45,23 @@
           Target UPS
           <input type="number" id="target-ups" value="120" />
         </label>
+        <label for="flame-length">
+          Target FPS
+          <input type="number" id="target-fps" value="60" />
+        </label>
         <label for="debug-velocity">
           Draw velocity vectors
           <input type="checkbox" id="debug-velocity" />
         </label>
+        <label for="debug-hitbox">
+          Draw Hitboxes
+          <input type="checkbox" id="debug-hitbox" />
+        </label>
+        <label for="debug-trajectory">
+          Draw Trajectories
+          <input type="checkbox" id="debug-trajectory" />
+        </label>
         <button id="pause-resume">Pause</button>
-      </section>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

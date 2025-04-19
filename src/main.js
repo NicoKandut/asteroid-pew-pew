@@ -40,6 +40,8 @@ let targetUpsView = document.getElementById("target-ups");
 let menuView = document.getElementById("menu");
 let pauseResumeButton = document.getElementById("pause-resume");
 let debugVelocityCheckbox = document.getElementById("debug-velocity");
+let debugDrawHitboxes = document.getElementById("debug-hitbox");
+let debugDrawTrajectory = document.getElementById("debug-trajectory");
 let fireRateView = document.getElementById("fire-rate");
 let hpView = document.getElementById("hp");
 
@@ -190,6 +192,14 @@ const setupInput = () => {
   debugVelocityCheckbox.addEventListener("change", (event) => {
     renderer.setVelocityDrawing(event.target.checked);
   });
+
+  debugDrawHitboxes.addEventListener("change", (event) => {
+    renderer.setDrawHitboxes(event.target.checked);
+  })
+
+  debugDrawTrajectory.addEventListener("change", (event) => {
+    renderer.setDrawTrajectory(event.target.checked);
+  })
 
   pauseResumeButton.addEventListener("click", togglePause);
 };
