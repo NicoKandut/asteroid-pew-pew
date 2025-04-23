@@ -17,3 +17,19 @@ export const reflect = (vector, normal) => {
     y: vector.y - 2 * dotProduct * normal.y,
   };
 };
+
+export const add = (a, b) => {
+  return { x: a.x + b.x, y: a.y + b.y };
+}
+
+export const sub = (a, b) => {
+  return { x: a.x - b.x, y: a.y - b.y };
+};
+
+export const scale = (vector, scalar) => {
+  return { x: vector.x * scalar, y: vector.y * scalar };
+}
+
+export const length = (vector) => {
+  return Math.sqrt(vector.x ** 2 + vector.y ** 2);
+}

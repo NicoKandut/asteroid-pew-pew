@@ -1,4 +1,5 @@
 import * as ht from "../features/SceneHierarchy";
+import { add, sub, scale } from "./linalg.js";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -34,6 +35,7 @@ const renderDetails = {
   },
   [ROCKET]: {
     color: RED,
+    radius: 10,
   },
   [SPACESHIP]: {
     color: GREEN,
@@ -63,7 +65,6 @@ let velocityDrawing = false;
 let hitboxDrawing = false;
 let trajectoryDrawing = false;
 
-
 // INITIALIZATION
 export const init = () => {
   // NOOP in 2d renderer, will be heavy in webgl
@@ -80,7 +81,7 @@ export const setDrawHitboxes = (draw) => {
 
 export const setDrawTrajectory = (draw) => {
   trajectoryDrawing = draw;
-}
+};
 
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
@@ -94,7 +95,7 @@ export const removeEntity = (type, id) => {
 };
 
 const img = new Image();
-img.src = "/public/rock.webp";
+img.src = "/rock.webp";
 
 // DRAWING
 export const render = () => {
@@ -151,12 +152,11 @@ export const render = () => {
     }
   }
 
-  if(trajectoryDrawing)
-    ht.drawTrajectory(context);
+  if (trajectoryDrawing) ht.drawTrajectory(context);
 };
 
 const drawCircular = (entity) => {
-  const { radius,  texture } = entity;
+  const { radius, texture } = entity;
   const transform = ht.calcTransform(entity);
 
   context.save();
@@ -165,15 +165,14 @@ const drawCircular = (entity) => {
 
   context.drawImage(texture, -radius, -radius, radius * 2, radius * 2);
 
-  if(hitboxDrawing)
-  {
+  if (hitboxDrawing) {
     context.strokeStyle = RED;
     context.lineWidth = 1;
-  
+
     context.beginPath();
     context.moveTo(0, 0);
     context.arc(0, 0, radius, 0, 2 * Math.PI);
-  
+
     context.stroke();
   }
 
@@ -181,29 +180,20 @@ const drawCircular = (entity) => {
 };
 
 const drawBullet = (entity) => {
-  context.fillStyle = renderDetails[BULLET].color;
-  context.strokeStyle = renderDetails[BULLET].color;
-  context.lineWidth = renderDetails[BULLET]?.strokeWidth ?? 0;
-
-  context.beginPath();
-
   const { length } = renderDetails[BULLET];
   const c = (Math.cos(entity.rotation) * length) / 2;
   const s = (Math.sin(entity.rotation) * length) / 2;
+  context.fillStyle = renderDetails[BULLET].color;
+  context.strokeStyle = renderDetails[BULLET].color;
+  context.lineWidth = renderDetails[BULLET]?.strokeWidth ?? 0;
+  context.beginPath();
   context.moveTo(entity.position.x + c, entity.position.y + s);
   context.lineTo(entity.position.x - c, entity.position.y - s);
-
   context.stroke();
 };
 
 const drawRocket = (entity) => {
-  context.fillStyle = renderDetails[ROCKET].color;
-  context.strokeStyle = renderDetails[ROCKET].color;
-  context.lineWidth = renderDetails[ROCKET]?.strokeWidth ?? 0;
-
-  context.beginPath();
-
-  const { radius } = entity;
+  const { radius } = renderDetails[ROCKET];
   const third = (2 * Math.PI) / 8;
   const p1 = {
     x: entity.position.x + radius * Math.cos(entity.rotation),
@@ -217,12 +207,30 @@ const drawRocket = (entity) => {
     x: entity.position.x - radius * Math.cos(entity.rotation - third),
     y: entity.position.y - radius * Math.sin(entity.rotation - third),
   };
+
+  context.fillStyle = renderDetails[ROCKET].color;
+  context.strokeStyle = renderDetails[ROCKET].color;
+  context.lineWidth = renderDetails[ROCKET]?.strokeWidth ?? 0;
+
+  context.beginPath();
   context.moveTo(p1.x, p1.y);
   context.lineTo(p2.x, p2.y);
   context.lineTo(p3.x, p3.y);
   context.lineTo(p1.x, p1.y);
-
   context.stroke();
+
+  if (entity.pathPoints) {
+    context.strokeStyle = "grey";
+    context.beginPath();
+    context.moveTo(entity.pathPoints[0].x, entity.pathPoints[0].y);
+    for (const point of entity.pathPoints) {
+      context.lineTo(point.x, point.y);
+      context.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+      context.moveTo(point.x, point.y);
+    }
+    context.lineTo(entity.targets[entity.targets.length - 1].x, entity.targets[entity.targets.length - 1].y);
+    context.stroke();
+  }
 };
 
 export const drawRectangular = (entity) => {
@@ -252,7 +260,6 @@ export const drawFlames = (entity) => {
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
 
-
   context.beginPath();
   const flicker = Math.random() * 5;
 
@@ -280,4 +287,8 @@ export const drawFlames = (entity) => {
   }
 
   context.restore();
+  // context.moveTo(entity.position.x, entity.position.y);
+  // for (const target of entity.targets) {
+  //   context.lineTo(target.position.x, target.position.y);
+  // }
 };
