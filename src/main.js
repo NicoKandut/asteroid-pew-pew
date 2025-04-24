@@ -15,9 +15,9 @@ import {
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { BEST, gameState, resetGameState } from "./util/gamestatistics.js";
-import { playAsteroidCollisionSound, playBulletHitSound, playBulletShootSound, playExplosionSound, playSpaceshipCollisionSound } from "./util/sound.js";
+import { audioPropulsion, playAsteroidCollisionSound, playBulletHitSound, playBulletShootSound, playExplosionSound, playSpaceshipCollisionSound } from "./util/sound.js";
 
-const BULLET_MASS = 100;
+const BULLET_MASS = 2000;
 const ROCKET_PIERCING = 3;
 const ROCKET_VELOCITY = 300;
 
@@ -72,7 +72,7 @@ let spaceship = null;
 // shooting
 let shootingBullets = false;
 let lastBulletTime = 0;
-let bulletCooldown = 20; // in ms
+let bulletCooldown = 40; // in ms
 
 // rockets
 let shootingRockets = false;
@@ -289,7 +289,7 @@ const processEvents = (deltaTime) => {
         },
       },
     ];
-    for (let i = 0; i < ROCKET_PIERCING; i++) {
+    for (let i = 0; i < Math.min(ROCKET_PIERCING, asteroids.length); i++) {
       let asteroid;
       do {
         asteroid = asteroids[Math.floor(Math.random() * asteroids.length)];
@@ -426,6 +426,7 @@ const update = (deltaTime) => {
   };
   const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
   gameState.distanceTraveled += distance;
+  audioPropulsion.volume = Math.min(distance / 100, 0.05);
   for (const asteroid of asteroids) {
     if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
       spaceship.hp -= 1;
@@ -437,10 +438,12 @@ const update = (deltaTime) => {
         playExplosionSound();
         removeSpaceshipFromRenderer();
         spaceship.frame = 0;
+        audioPropulsion.volume = 0;
         renderer.addEntity(renderer.EXPLOSION, spaceship);
         setTimeout(() => {
           endGame();
         }, 1000);
+        break;
       }
     }
   }
@@ -636,6 +639,7 @@ const removeSpaceshipFromRenderer = () => {
 
 const endGame = () => {
   paused = true;
+  audioPropulsion.volume = 0;
 
   setGameOverStat(timePlayedView, (gameState.timePlayed / 1000).toFixed(1), (BEST.timePlayed / 1000).toFixed(1), "s");
   setGameOverStat(asteroidsDestroyedView, gameState.asteroidsDestroyed, BEST.asteroidsDestroyed);

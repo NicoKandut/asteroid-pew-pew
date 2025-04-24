@@ -1,3 +1,8 @@
+export const audioPropulsion = new Audio("/propulsion.mp3");
+audioPropulsion.volume = 0;
+audioPropulsion.loop = true;
+audioPropulsion.play();
+
 export const playAsteroidCollisionSound = () => {
     const audio = new Audio("/bonk.mp3");
     audio.volume = 0.05;
