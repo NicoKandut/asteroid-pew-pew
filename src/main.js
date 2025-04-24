@@ -9,6 +9,7 @@ import { randomAngularVelocity, randomPosition, randomVelocity, randomAsteroidSi
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { BEST, gameState, resetGameState } from "./util/gamestatistics.js";
+import { playBulletHitSound, playBulletShootSound, playExplosionSound } from "./util/sound.js";
 
 const BULLET_MASS = 100;
 const ROCKET_PIERCING = 3;
@@ -80,9 +81,6 @@ let movement = {
   left: false,
   right: false,
 };
-
-const audioHit = new Audio("/hit.mp3");
-audioHit.volume = 0.05;
 
 const main = () => {
   renderer.init();
@@ -273,8 +271,7 @@ const processEvents = (deltaTime) => {
     bulletPosition.x += spaceship.position.x;
     bulletPosition.y += spaceship.position.y;
     addBullet(bulletPosition, rotation, angleToUnitVector(rotation), 0);
-
-    audioHit.play();
+    playBulletShootSound();
     bulletIndex++;
     lastBulletTime = now;
   }
@@ -374,9 +371,11 @@ const update = (deltaTime) => {
       if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
         bullet.remove = true;
         asteroid.hp -= 1;
+        playBulletHitSound();
         if (asteroid.hp <= 0) {
           ++gameState.asteroidsDestroyed;
           asteroid.remove = true;
+          playExplosionSound();
         }
       }
     }
@@ -387,6 +386,7 @@ const update = (deltaTime) => {
     pathInterpolate(rocket, rocket.progress, (target) => {
       target.remove = true;
       ++gameState.asteroidsDestroyed;
+      playExplosionSound();
     });
   }
 

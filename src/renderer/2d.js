@@ -292,6 +292,14 @@ export const drawFlames = (entity) => {
   const { width, height } = entity;
   const transform = ht.calcTransform(entity);
 
+  const parentVelocity = entity?.parent?.velocity ?? { x: 0, y: 1 };
+  const parentParentVelocity = entity?.parent?.parent?.velocity ?? { x: 0, y: 0 };
+  const totalVelocity = {
+    x: parentVelocity.x + parentParentVelocity.x,
+    y: parentVelocity.y + parentParentVelocity.y,
+  };
+  const velocityScale = Math.min(Math.sqrt(totalVelocity.x ** 2 + totalVelocity.y ** 2) * 5, 2);
+
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
@@ -300,8 +308,8 @@ export const drawFlames = (entity) => {
   const flicker = Math.random() * 5;
 
   context.moveTo(0, 0);
-  context.lineTo(-width, height + flicker);
-  context.lineTo(width, height + flicker);
+  context.lineTo(-width, (height + flicker) * velocityScale);
+  context.lineTo(width, (height + flicker) * velocityScale);
   context.closePath();
 
   context.fillStyle = "orange";
@@ -309,8 +317,8 @@ export const drawFlames = (entity) => {
 
   context.beginPath();
   context.moveTo(0, 0);
-  context.lineTo(-width / 2, height / 2 + flicker);
-  context.lineTo(width / 2, height / 2 + flicker);
+  context.lineTo(-width / 2, (height / 2 + flicker) * velocityScale);
+  context.lineTo(width / 2, (height / 2 + flicker) * velocityScale);
   context.closePath();
 
   context.fillStyle = "yellow";
