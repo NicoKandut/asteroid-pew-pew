@@ -6,7 +6,7 @@
   --z-index-blur: 2;
   --z-index-scanlines: 3;
 
-  --drop-shadow-3d: drop-shadow(-4px -2px 2px #f002) drop-shadow(4px 2px 2px #0ff2);
+  --drop-shadow-3d: drop-shadow(-2px -2px 4px #f002) drop-shadow(2px 2px 4px #0ff2);
 }
 
 * {
