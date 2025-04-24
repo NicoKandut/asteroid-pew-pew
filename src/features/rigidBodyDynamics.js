@@ -1,4 +1,4 @@
-import { normalize } from "../renderer/linalg.js";
+import { normalize } from "../util/linalg.js";
 
 export const createPhysicsEntity = () => {
   return {

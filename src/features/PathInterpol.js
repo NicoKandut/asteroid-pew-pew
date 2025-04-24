@@ -1,4 +1,4 @@
-import { sub, length } from "../renderer/linalg.js";
+import { sub, length } from "../util/linalg.js";
 
 const SAMPLES_PER_SEGMENT = 10;
 const SAMPLE_STEP = 30;
@@ -49,9 +49,7 @@ export const createArcLengthTable = (entity) => {
   entity.arcLengthTable.push({ v: entity.targets.length - 3, totalLength });
 };
 
-const easeInOut = (x) => {
-  return -(Math.cos(Math.PI * x) - 1) / 2;
-};
+const easeInOut = (x) => -(Math.cos(Math.PI * x) - 1) / 2;
 
 const lookupArcLength = (entity, progress) => {
   let nativeProgress = entity.arcLengthTable[entity.arcLengthTable.length - 1].v;
@@ -73,19 +71,21 @@ const lookupArcLength = (entity, progress) => {
   const offset = Math.floor(nativeProgress);
   const t = nativeProgress - offset;
   const partialProgress = easeInOut(t);
-  console.log("t => ", t, partialProgress);
   return offset + partialProgress;
 };
 
-export const pathInterpolate = (entity, progress) => {
+export const pathInterpolate = (entity, progress, onTargetReached) => {
   const newPosition = catmullRomConstantSpeed(entity, progress);
   entity.velocity = sub(newPosition, entity.position);
   entity.rotation = Math.atan2(entity.velocity.y, entity.velocity.x);
   entity.position = newPosition;
 
-  const newProgress = Math.max(Math.min(Math.floor(lookupArcLength(entity, progress)), entity.targets.length - 3), 0);
-  entity.targets[newProgress + 1].remove = true;
-  if (newProgress >= entity.targets.length - 3) {
+  const currentTarget = Math.max(Math.min(Math.floor(lookupArcLength(entity, progress)), entity.targets.length - 3), 0);
+  if (currentTarget !== entity.currentTarget) {
+    onTargetReached(entity.targets[currentTarget + 1]);
+    entity.currentTarget = currentTarget;
+  }
+  if (currentTarget >= entity.targets.length - 3) {
     entity.remove = true;
     return;
   }

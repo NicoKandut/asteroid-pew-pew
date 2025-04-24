@@ -1,5 +1,4 @@
 import * as ht from "../features/SceneHierarchy";
-import { add, sub, scale } from "./linalg.js";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -7,6 +6,7 @@ const context = canvas.getContext("2d");
 // ENTITY TYPES
 export const ASTEROID = "asteroid";
 export const BULLET = "bullet";
+export const EXPLOSION = "explosion";
 export const ROCKET = "rocket";
 export const SPACESHIP = "spaceship";
 export const VELOCITY = "velocity";
@@ -59,11 +59,13 @@ const entities = {
   [ASTEROID]: {},
   [BULLET]: {},
   [ROCKET]: {},
+  [EXPLOSION]: {},
 };
 
 let velocityDrawing = false;
 let hitboxDrawing = false;
 let trajectoryDrawing = false;
+let drawSplinePaths = false;
 
 // INITIALIZATION
 export const init = () => {
@@ -83,6 +85,10 @@ export const setDrawTrajectory = (draw) => {
   trajectoryDrawing = draw;
 };
 
+export const setDrawSplinePaths = (draw) => {
+  drawSplinePaths = draw;
+};
+
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
   entity.id = getId();
@@ -94,8 +100,21 @@ export const removeEntity = (type, id) => {
   ht.removeTrajectory(id);
 };
 
+export const removeAllEntities = () => {
+  for (const type in entities) {
+    entities[type] = {};
+  }
+};
+
 const img = new Image();
 img.src = "/rock.webp";
+
+const boomFrames = [];
+for (let i = 0; i < 15; ++i) {
+  const img = new Image();
+  img.src = `/boom/boom_${i}.gif`;
+  boomFrames.push(img);
+}
 
 // DRAWING
 export const render = () => {
@@ -107,13 +126,16 @@ export const render = () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   // draw all entities by type
+
   for (const type in entities) {
     // configure drawing for entity type
-
     for (const entity of Object.values(entities[type])) {
       switch (type) {
         case ASTEROID:
           drawCircular(entity);
+          break;
+        case EXPLOSION:
+          drawExplosion(entity);
           break;
         case BULLET:
           drawBullet(entity);
@@ -219,7 +241,7 @@ const drawRocket = (entity) => {
   context.lineTo(p1.x, p1.y);
   context.stroke();
 
-  if (entity.pathPoints) {
+  if (drawSplinePaths) {
     context.strokeStyle = "grey";
     context.beginPath();
     context.moveTo(entity.pathPoints[0].x, entity.pathPoints[0].y);
@@ -230,6 +252,20 @@ const drawRocket = (entity) => {
     }
     context.lineTo(entity.targets[entity.targets.length - 1].x, entity.targets[entity.targets.length - 1].y);
     context.stroke();
+  }
+};
+
+export const drawExplosion = (entity) => {
+  const width = 100;
+  const height = 100;
+  context.translate(entity.position.x, entity.position.y);
+  const texture = boomFrames[entity.frame];
+  context.drawImage(texture, -width / 2, -height / 2, width, height);
+  context.translate(-entity.position.x, -entity.position.y);
+  if (entity.frame < boomFrames.length - 1) {
+    entity.frame++;
+  } else {
+    removeEntity(EXPLOSION, entity.id);
   }
 };
 

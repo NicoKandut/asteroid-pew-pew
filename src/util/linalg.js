@@ -27,8 +27,14 @@ export const sub = (a, b) => {
 };
 
 export const scale = (vector, scalar) => {
-  return { x: vector.x * scalar, y: vector.y * scalar };
+  vector.x *= scalar;
+  vector.y *= scalar;
 }
+
+export const angleToUnitVector = (angle) => ({
+  x: Math.cos(angle),
+  y: Math.sin(angle),
+})
 
 export const length = (vector) => {
   return Math.sqrt(vector.x ** 2 + vector.y ** 2);
