@@ -15,7 +15,7 @@ import {
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { BEST, gameState, resetGameState } from "./util/gamestatistics.js";
-import { playBulletHitSound, playBulletShootSound, playExplosionSound } from "./util/sound.js";
+import { playAsteroidCollisionSound, playBulletHitSound, playBulletShootSound, playExplosionSound, playSpaceshipCollisionSound } from "./util/sound.js";
 
 const BULLET_MASS = 100;
 const ROCKET_PIERCING = 3;
@@ -48,8 +48,7 @@ let gameOverView = document.getElementById("game-over");
 let timePlayedView = document.getElementById("time-played");
 let asteroidsDestroyedView = document.getElementById("asteroids-destroyed");
 let distanceTraveledView = document.getElementById("distance-traveled");
-let bulletsFiredView = document.getElementById("bullets-fired");
-let rocketsFiredView = document.getElementById("rockets-fired");
+let damageDealtView = document.getElementById("damage-dealt");
 let restartButton = document.getElementById("restart");
 
 // fps / ups settings
@@ -381,7 +380,9 @@ const update = (deltaTime) => {
 
     for (const asteroid2 of asteroids) {
       if (asteroid !== asteroid2) {
-        checkAndResolveCollision(asteroid, asteroid2, 1, true);
+        if(checkAndResolveCollision(asteroid, asteroid2, 1, true)) {
+          playAsteroidCollisionSound();
+        }
       }
     }
   }
@@ -424,14 +425,16 @@ const update = (deltaTime) => {
     y: spaceship.position.y - previousPosition.y,
   };
   const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
-  ++gameState.distanceTraveled;
+  gameState.distanceTraveled += distance;
   for (const asteroid of asteroids) {
     if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
       spaceship.hp -= 1;
+      playSpaceshipCollisionSound();
       if (spaceship.hp >= 0) {
         hpView.children.item(spaceship.hp).style.color = "grey";
       }
       if (spaceship.hp <= 0) {
+        playExplosionSound();
         removeSpaceshipFromRenderer();
         spaceship.frame = 0;
         renderer.addEntity(renderer.EXPLOSION, spaceship);
@@ -636,9 +639,8 @@ const endGame = () => {
 
   setGameOverStat(timePlayedView, (gameState.timePlayed / 1000).toFixed(1), (BEST.timePlayed / 1000).toFixed(1), "s");
   setGameOverStat(asteroidsDestroyedView, gameState.asteroidsDestroyed, BEST.asteroidsDestroyed);
-  setGameOverStat(distanceTraveledView, gameState.distanceTraveled, BEST.distanceTraveled, "m");
-  setGameOverStat(bulletsFiredView, gameState.bulletsFired, BEST.bulletsFired);
-  setGameOverStat(rocketsFiredView, gameState.rocketsFired, BEST.rocketsFired);
+  setGameOverStat(distanceTraveledView, gameState.distanceTraveled.toFixed(1), BEST.distanceTraveled.toFixed(1), "m");
+  setGameOverStat(damageDealtView, gameState.damageDealt, BEST.damageDealt, "hp");
 
   gameOverView.style.display = "grid";
 };

@@ -110,6 +110,7 @@ kbd {
   font-size: 24px;
   z-index: var(--z-index-ui);
   filter: var(--drop-shadow-3d);
+  border: 2px solid white;
 }
 
 label {
@@ -218,6 +219,7 @@ button:hover {
   font-size: 24px;
   z-index: var(--z-index-ui);
   filter: var(--drop-shadow-3d);
+  border: 2px solid white;
 }
 
 #game-over > h1 {

@@ -7,6 +7,7 @@ const context = canvas.getContext("2d");
 export const ASTEROID = "asteroid";
 export const BULLET = "bullet";
 export const EXPLOSION = "explosion";
+export const FLASH = "flash";
 export const ROCKET = "rocket";
 export const SPACESHIP = "spaceship";
 export const VELOCITY = "velocity";
@@ -60,6 +61,7 @@ const entities = {
   [BULLET]: {},
   [ROCKET]: {},
   [EXPLOSION]: {},
+  [FLASH]: {},
 };
 
 let velocityDrawing = false;
@@ -144,6 +146,9 @@ export const render = () => {
         case FLAMES:
           drawFlames(entity);
           break;
+        case FLASH:
+          drawFlash(entity);
+          break;
       }
 
       ht.addTrajectory(entity.id, ht.calcTransform(entity));
@@ -158,11 +163,13 @@ export const render = () => {
     context.beginPath();
     for (const type in entities) {
       for (const entity of Object.values(entities[type])) {
-        const { position, velocity } = entity;
-        const { x, y } = position;
-        const { x: vx, y: vy } = velocity;
-        context.moveTo(x, y);
-        context.lineTo(x + vx * 200, y + vy * 200);
+        if ("velocity" in entity) {
+          const { position, velocity } = entity;
+          const { x, y } = position;
+          const { x: vx, y: vy } = velocity;
+          context.moveTo(x, y);
+          context.lineTo(x + vx * 200, y + vy * 200);
+        }
       }
       context.stroke();
     }
@@ -329,4 +336,23 @@ export const drawFlames = (entity) => {
   // for (const target of entity.targets) {
   //   context.lineTo(target.position.x, target.position.y);
   // }
+};
+
+const drawFlash = (entity) => {
+  const center = entity.position;
+  const innerRadius = 3;
+  const outerRadius = 15;
+
+  context.fillStyle = "white";
+  context.beginPath();
+  context.moveTo(center.x + innerRadius, center.y + innerRadius);
+  context.lineTo(center.x + outerRadius, center.y);
+  context.lineTo(center.x + innerRadius, center.y - innerRadius);
+  context.lineTo(center.x, center.y - outerRadius);
+  context.lineTo(center.x - innerRadius, center.y - innerRadius);
+  context.lineTo(center.x - outerRadius, center.y);
+  context.lineTo(center.x - innerRadius, center.y + innerRadius);
+  context.lineTo(center.x, center.y + outerRadius);
+  context.closePath();
+  context.fill();
 };

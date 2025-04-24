@@ -1,4 +1,5 @@
 import { normalize } from "../util/linalg.js";
+import * as renderer from "../renderer/2d.js";
 
 export const createPhysicsEntity = () => {
   return {
@@ -18,7 +19,7 @@ export const createPhysicsEntity = () => {
     width: 0,
     maxVelocity: 1,
     parent: null,
-    texture: null
+    texture: null,
   };
 };
 
@@ -89,6 +90,15 @@ export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
   a.velocity.y -= momentum * elasticity * b.mass * normal.y;
   b.velocity.x += momentum * elasticity * a.mass * normal.x;
   b.velocity.y += momentum * elasticity * a.mass * normal.y;
+
+  const flash = {
+    position: {
+      x: (a.position.x + b.position.x) / 2,
+      y: (a.position.y + b.position.y) / 2,
+    },
+  };
+  renderer.addEntity(renderer.FLASH, flash);
+  setTimeout(() => renderer.removeEntity(renderer.FLASH, flash.id), 100);
 
   return true;
 };

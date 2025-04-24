@@ -1,10 +1,19 @@
-new Audio("/laser.mp3");
+export const playAsteroidCollisionSound = () => {
+    const audio = new Audio("/bonk.mp3");
+    audio.volume = 0.05;
+    audio.play();
+}
 
+export const playSpaceshipCollisionSound = () => {
+    const audio = new Audio("/metal-hit.mp3");
+    audio.volume = 0.05;
+    audio.play();
+}
 
 export const playBulletShootSound = () => {
-    const audioHit = new Audio("/laser.mp3");
-    audioHit.volume = 0.02;
-    audioHit.play();
+    const audio = new Audio("/laser.mp3");
+    audio.volume = 0.02;
+    audio.play();
 }
 
 export const playBulletHitSound = () => {
@@ -14,7 +23,7 @@ export const playBulletHitSound = () => {
 }
 
 export const playExplosionSound = () => {
-  const audioExplosion = new Audio("/explosion.mp3");
-  audioExplosion.volume = 0.05;
-  audioExplosion.play();
+  const audio = new Audio("/explosion.mp3");
+  audio.volume = 0.05;
+  audio.play();
 };
