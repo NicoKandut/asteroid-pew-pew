@@ -7,6 +7,8 @@
   --z-index-scanlines: 3;
 
   --drop-shadow-3d: drop-shadow(-2px -2px 4px #f002) drop-shadow(2px 2px 4px #0ff2);
+
+  accent-color: gold;
 }
 
 * {
@@ -96,14 +98,16 @@ kbd {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  background-color: #0008;
+  background-color: #000d;
   backdrop-filter: blur(2px);
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  left: 50%;
+  padding: 1rem;
+  transform: translate(-50%, -50%);
+  gap: 0.2rem;
+  width: 420px;
+  font-size: 24px;
   z-index: var(--z-index-ui);
   filter: var(--drop-shadow-3d);
 }
@@ -111,13 +115,11 @@ kbd {
 label {
   padding: 0.5rem 1rem;
   display: block;
-  background-color: black;
   color: white;
-  border: 2px white solid;
 
   > input[type="number"] {
     width: 4rem;
-    color: white;
+    color: gold;
     background-color: black;
     border: none;
   }
@@ -199,23 +201,6 @@ button:hover {
   cursor: pointer;
 }
 
-#start {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  background-color: #0008;
-  backdrop-filter: blur(2px);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: var(--z-index-ui);
-  filter: var(--drop-shadow-3d);
-}
-
 #game-over {
   display: none;
   grid-template-columns: repeat(3, auto);
@@ -229,7 +214,7 @@ button:hover {
   padding: 1rem;
   transform: translate(-50%, -50%);
   gap: 0.2rem;
-  width: 420px;
+  width: 550px;
   font-size: 24px;
   z-index: var(--z-index-ui);
   filter: var(--drop-shadow-3d);

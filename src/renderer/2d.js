@@ -67,12 +67,6 @@ let hitboxDrawing = false;
 let trajectoryDrawing = false;
 let drawSplinePaths = false;
 
-// INITIALIZATION
-export const init = () => {
-  // NOOP in 2d renderer, will be heavy in webgl
-  console.info("renderer inititalized");
-};
-
 export const setVelocityDrawing = (draw) => {
   velocityDrawing = draw;
 };

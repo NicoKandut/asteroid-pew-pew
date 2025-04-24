@@ -5,7 +5,13 @@ import {
   velocityVerlet,
 } from "./features/rigidBodyDynamics.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
-import { randomAngularVelocity, randomPosition, randomVelocity, randomAsteroidSize } from "./util/random.js";
+import {
+  randomAngularVelocity,
+  randomPositionOnEdge,
+  randomVelocity,
+  randomAsteroidSize,
+  randomPosition,
+} from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { BEST, gameState, resetGameState } from "./util/gamestatistics.js";
@@ -63,7 +69,6 @@ let asteroids = [];
 let bullets = [];
 let rockets = [];
 let spaceship = null;
-let asteroidSpawner = null;
 
 // shooting
 let shootingBullets = false;
@@ -75,6 +80,10 @@ let shootingRockets = false;
 let rocketCooldown = 1000; // in ms
 let lastRocketTime = 0;
 
+// asteroids
+let asteroidCooldown = 1000;
+let lastAsteroidTime = 0;
+
 let movement = {
   forward: false,
   backward: false,
@@ -83,7 +92,6 @@ let movement = {
 };
 
 const main = () => {
-  renderer.init();
   lastFrameTime = performance.now();
   lastSummaryTime = lastFrameTime;
 
@@ -97,19 +105,9 @@ const main = () => {
 };
 
 const initGame = () => {
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
   addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
-  asteroidSpawner = setInterval(() => {
-    if (asteroids.length < 10) {
-      addAsteroid(
-        randomPosition(),
-        0,
-        { x: 0, y: 0 },
-        randomVelocity(0.1 * Math.random() + 0.01),
-        randomAngularVelocity(0.001),
-        randomAsteroidSize()
-      );
-    }
-  }, 100);
 };
 
 let bulletIndex = 0;
@@ -317,6 +315,32 @@ const processEvents = (deltaTime) => {
     lastRocketTime = now;
   }
 
+  if (now - lastAsteroidTime >= asteroidCooldown) {
+    const position = randomPositionOnEdge();
+    const target = randomPosition();
+    const rotation = Math.random() * Math.PI * 2;
+    const velocity = {
+      x: target.x - position.x,
+      y: target.y - position.y,
+    };
+    const length = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
+    if (length > 0) {
+      velocity.x /= length;
+      velocity.y /= length;
+    }
+    velocity.x *= Math.random() * 0.1 + 0.1;
+    velocity.y *= Math.random() * 0.1 + 0.1;
+    const angularVelocity = randomAngularVelocity(0.01);
+    const radius = randomAsteroidSize();
+    addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius);
+    lastAsteroidTime = now;
+
+    asteroidCooldown *= (Math.random() - 0.6) * 0.2 + 1;
+    asteroidCooldown = Math.max(asteroidCooldown, 300);
+    asteroidCooldown = Math.min(asteroidCooldown, 2000);
+    // console.log(asteroidCooldown);
+  }
+
   // movement
   if (spaceship) {
     if (movement.forward) {
@@ -335,7 +359,7 @@ const processEvents = (deltaTime) => {
 };
 
 const outOfBounds = (position) => {
-  const padding = 50;
+  const padding = 100;
   return (
     position.x < 0 - padding ||
     position.x > canvas.width + padding ||
@@ -371,6 +395,8 @@ const update = (deltaTime) => {
       if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
         bullet.remove = true;
         asteroid.hp -= 1;
+        gameState.bulletsHit++;
+        gameState.damageDealt++;
         playBulletHitSound();
         if (asteroid.hp <= 0) {
           ++gameState.asteroidsDestroyed;
@@ -386,6 +412,7 @@ const update = (deltaTime) => {
     pathInterpolate(rocket, rocket.progress, (target) => {
       target.remove = true;
       ++gameState.asteroidsDestroyed;
+      gameState.damageDealt += target.hp;
       playExplosionSound();
     });
   }
@@ -476,7 +503,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.mass = calculateAsteroidMass(radius);
   asteroid.radius = radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
-  asteroid.hp = 10;
+  asteroid.hp = radius / 2;
 
   const img = new Image();
   img.src = "../assets/Asteroid1.png";
@@ -521,7 +548,7 @@ const addRocket = (position, rotation, velocity, angularVelocity, targets) => {
   rocket.radius = 5;
   rocket.targets = targets;
   rocket.progress = 0;
-  rocket.currentTarget = 1;
+  rocket.currentTarget = 2;
   createArcLengthTable(rocket);
   samplePath(rocket);
   renderer.addEntity(renderer.ROCKET, rocket);
@@ -605,9 +632,9 @@ const removeSpaceshipFromRenderer = () => {
 };
 
 const endGame = () => {
-  clearInterval(asteroidSpawner);
   paused = true;
-  setGameOverStat(timePlayedView, (gameState.timePlayed / 1000).toFixed(1), BEST.timePlayed, "s");
+
+  setGameOverStat(timePlayedView, (gameState.timePlayed / 1000).toFixed(1), (BEST.timePlayed / 1000).toFixed(1), "s");
   setGameOverStat(asteroidsDestroyedView, gameState.asteroidsDestroyed, BEST.asteroidsDestroyed);
   setGameOverStat(distanceTraveledView, gameState.distanceTraveled, BEST.distanceTraveled, "m");
   setGameOverStat(bulletsFiredView, gameState.bulletsFired, BEST.bulletsFired);
@@ -632,10 +659,10 @@ const setGameOverStat = (view, value, best, unit) => {
 const resetGame = () => {
   resetGameState();
   renderer.removeAllEntities();
-  spaceship = null;
   asteroids = [];
   bullets = [];
   rockets = [];
+  asteroidCooldown = 1000;
 
   for (let heart of hpView.children) {
     heart.style.color = "red";
