@@ -15,11 +15,19 @@ import {
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { BEST, gameState, resetGameState } from "./util/gamestatistics.js";
-import { audioPropulsion, playAsteroidCollisionSound, playBulletHitSound, playBulletShootSound, playExplosionSound, playSpaceshipCollisionSound } from "./util/sound.js";
+import {
+  audioPropulsion,
+  playAsteroidCollisionSound,
+  playBulletHitSound,
+  playBulletShootSound,
+  playExplosionSound,
+  playSpaceshipCollisionSound,
+} from "./util/sound.js";
 
 const BULLET_MASS = 2000;
 const ROCKET_PIERCING = 3;
 const ROCKET_VELOCITY = 300;
+const ASSET_DIR = "https://github.com/NicoKandut/asteroid-pew-pew/raw/refs/heads/main/assets/";
 
 const calculateAsteroidMass = (radius) => {
   const density = 3.5;
@@ -380,7 +388,7 @@ const update = (deltaTime) => {
 
     for (const asteroid2 of asteroids) {
       if (asteroid !== asteroid2) {
-        if(checkAndResolveCollision(asteroid, asteroid2, 1, true)) {
+        if (checkAndResolveCollision(asteroid, asteroid2, 1, true)) {
           playAsteroidCollisionSound();
         }
       }
@@ -512,7 +520,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.hp = radius / 2;
 
   const img = new Image();
-  img.src = "../assets/Asteroid1.png";
+  img.src = ASSET_DIR + "Asteroid1.png";
   asteroid.texture = img;
 
   // do not spawn asteroids inside each other
@@ -578,12 +586,12 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.hp = 5;
 
   const image = new Image();
-  image.src = "../assets/Spaceship.png";
+  image.src = ASSET_DIR + "Spaceship.png";
   spaceship.texture = image;
   renderer.addEntity(renderer.SPACESHIP, spaceship);
 
-  addSpaceshipPart({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, "../assets/WingRight.png", spaceship);
-  addSpaceshipPart({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, "../assets/WingLeft.png", spaceship);
+  addSpaceshipPart({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, ASSET_DIR + "WingRight.png", spaceship);
+  addSpaceshipPart({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, ASSET_DIR + "WingLeft.png", spaceship);
 };
 
 const addSpaceshipPart = (position, rotation, type, image, parent) => {

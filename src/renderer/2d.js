@@ -102,13 +102,15 @@ export const removeAllEntities = () => {
   }
 };
 
+const PUBLIC_DIR = "https://github.com/NicoKandut/asteroid-pew-pew/raw/refs/heads/main/public/";
+
 const img = new Image();
-img.src = "/rock.webp";
+img.src = PUBLIC_DIR + "rock.webp";
 
 const boomFrames = [];
 for (let i = 0; i < 15; ++i) {
   const img = new Image();
-  img.src = `/boom/boom_${i}.gif`;
+  img.src = PUBLIC_DIR + `boom/boom_${i}.gif`;
   boomFrames.push(img);
 }
 
