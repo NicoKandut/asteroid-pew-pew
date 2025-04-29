@@ -5,29 +5,24 @@ import {
   velocityVerlet,
 } from "./features/rigidBodyDynamics.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
-import {
-  randomAngularVelocity,
-  randomPositionOnEdge,
-  randomVelocity,
-  randomAsteroidSize,
-  randomPosition,
-} from "./util/random.js";
+import { randomAngularVelocity, randomPositionOnEdge, randomAsteroidSize, randomPosition } from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { BEST, gameState, resetGameState } from "./util/gamestatistics.js";
 import {
-  audioPropulsion,
   playAsteroidCollisionSound,
   playBulletHitSound,
   playBulletShootSound,
   playExplosionSound,
   playSpaceshipCollisionSound,
+  setPropulsionVolume,
+  setVolumeModifier,
 } from "./util/sound.js";
 
 const BULLET_MASS = 2000;
 const ROCKET_PIERCING = 3;
 const ROCKET_VELOCITY = 300;
-const ASSET_DIR = "https://github.com/NicoKandut/asteroid-pew-pew/raw/refs/heads/main/assets/";
+const IMG_DIR = "img/";
 
 const calculateAsteroidMass = (radius) => {
   const density = 3.5;
@@ -58,6 +53,7 @@ let asteroidsDestroyedView = document.getElementById("asteroids-destroyed");
 let distanceTraveledView = document.getElementById("distance-traveled");
 let damageDealtView = document.getElementById("damage-dealt");
 let restartButton = document.getElementById("restart");
+let volumeSlider = document.getElementById("volume");
 
 // fps / ups settings
 let desired_delta_time = 1000 / 120;
@@ -191,32 +187,25 @@ const setupInput = () => {
   });
 
   targetFpsView.addEventListener("change", (event) => {
-    desired_frame_time = 1000 / Number(event.target.value);
+    desired_frame_time = 1000 / Math.max(0, Math.min(1000, Number(event.target.value)));
   });
 
   targetUpsView.addEventListener("change", (event) => {
-    desired_delta_time = 1000 / Number(event.target.value);
+    desired_delta_time = 1000 / Math.max(0, Math.min(1000, Number(event.target.value)));
   });
 
-  debugVelocityCheckbox.addEventListener("change", (event) => {
-    renderer.setVelocityDrawing(event.target.checked);
-  });
+  // debug visualizations
+  debugVelocityCheckbox.addEventListener("change", (event) => renderer.setVelocityDrawing(event.target.checked));
+  debugDrawHitboxes.addEventListener("change", (event) => renderer.setDrawHitboxes(event.target.checked));
+  debugDrawTrajectory.addEventListener("change", (event) => renderer.setDrawTrajectory(event.target.checked));
+  debugSplinePaths.addEventListener("change", (event) => renderer.setDrawSplinePaths(event.target.checked));
 
-  debugDrawHitboxes.addEventListener("change", (event) => {
-    renderer.setDrawHitboxes(event.target.checked);
-  });
-
-  debugDrawTrajectory.addEventListener("change", (event) => {
-    renderer.setDrawTrajectory(event.target.checked);
-  });
-
-  debugSplinePaths.addEventListener("change", (event) => {
-    renderer.setDrawSplinePaths(event.target.checked);
-  });
-
+  // button handlers
   pauseResumeButton.addEventListener("click", togglePause);
-
   restartButton.addEventListener("click", resetGame);
+
+  // volume control
+  volumeSlider.addEventListener("input", (event) => setVolumeModifier(event.target.value / 100));
 };
 
 const initUI = () => {
@@ -421,7 +410,7 @@ const update = (deltaTime) => {
     pathInterpolate(rocket, rocket.progress, (target) => {
       target.remove = true;
       ++gameState.asteroidsDestroyed;
-      gameState.damageDealt += target.hp;
+      gameState.damageDealt += target?.hp ?? 0;
       playExplosionSound();
     });
   }
@@ -434,7 +423,7 @@ const update = (deltaTime) => {
   };
   const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
   gameState.distanceTraveled += distance;
-  audioPropulsion.volume = Math.min(distance / 100, 0.05);
+  setPropulsionVolume(Math.min(distance / 100, 0.05));
   for (const asteroid of asteroids) {
     if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
       spaceship.hp -= 1;
@@ -446,7 +435,7 @@ const update = (deltaTime) => {
         playExplosionSound();
         removeSpaceshipFromRenderer();
         spaceship.frame = 0;
-        audioPropulsion.volume = 0;
+        setPropulsionVolume(0);
         renderer.addEntity(renderer.EXPLOSION, spaceship);
         setTimeout(() => {
           endGame();
@@ -520,7 +509,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.hp = radius / 2;
 
   const img = new Image();
-  img.src = ASSET_DIR + "Asteroid1.png";
+  img.src = IMG_DIR + "Asteroid1.png";
   asteroid.texture = img;
 
   // do not spawn asteroids inside each other
@@ -586,12 +575,12 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.hp = 5;
 
   const image = new Image();
-  image.src = ASSET_DIR + "Spaceship.png";
+  image.src = IMG_DIR + "Spaceship.png";
   spaceship.texture = image;
   renderer.addEntity(renderer.SPACESHIP, spaceship);
 
-  addSpaceshipPart({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, ASSET_DIR + "WingRight.png", spaceship);
-  addSpaceshipPart({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, ASSET_DIR + "WingLeft.png", spaceship);
+  addSpaceshipPart({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, IMG_DIR + "WingRight.png", spaceship);
+  addSpaceshipPart({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, IMG_DIR + "WingLeft.png", spaceship);
 };
 
 const addSpaceshipPart = (position, rotation, type, image, parent) => {
@@ -647,7 +636,7 @@ const removeSpaceshipFromRenderer = () => {
 
 const endGame = () => {
   paused = true;
-  audioPropulsion.volume = 0;
+  setPropulsionVolume(0);
 
   setGameOverStat(timePlayedView, (gameState.timePlayed / 1000).toFixed(1), (BEST.timePlayed / 1000).toFixed(1), "s");
   setGameOverStat(asteroidsDestroyedView, gameState.asteroidsDestroyed, BEST.asteroidsDestroyed);

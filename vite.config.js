@@ -1,3 +1,4 @@
 export default {
-  base: '/asteroid-pew-pew/',
-}
+  base: process.env.PROD ? "/asteroid-pew-pew/" : "/",
+  publicDir: "res",
+};
