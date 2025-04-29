@@ -1,9 +1,4 @@
-import {
-  checkAndResolveCollision,
-  checkCollision,
-  createPhysicsEntity,
-  velocityVerlet,
-} from "./features/rigidBodyDynamics.js";
+import { checkAndResolveCollision, checkCollision, createPhysicsEntity, velocityVerlet } from "./features/RigidBody.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
 import { randomAngularVelocity, randomPositionOnEdge, randomAsteroidSize, randomPosition } from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
@@ -18,11 +13,13 @@ import {
   setPropulsionVolume,
   setVolumeModifier,
 } from "./util/sound.js";
+import asteroid1Url from "/img/Asteroid1.png?url";
+import spaceshipUrl from "/img/Spaceship.png?url";
+import wingLeftUrl from "/img/WingLeft.png?url";
+import wingRightUrl from "/img/WingRight.png?url";
 
 const BULLET_MASS = 2000;
 const ROCKET_PIERCING = 3;
-const ROCKET_VELOCITY = 300;
-const IMG_DIR = "img/";
 
 const calculateAsteroidMass = (radius) => {
   const density = 3.5;
@@ -45,6 +42,7 @@ let debugVelocityCheckbox = document.getElementById("debug-velocity");
 let debugDrawHitboxes = document.getElementById("debug-hitbox");
 let debugDrawTrajectory = document.getElementById("debug-trajectory");
 let debugSplinePaths = document.getElementById("debug-spline-paths");
+let debugRocketSpeed = document.getElementById("debug-rocket-speed");
 let fireRateView = document.getElementById("fire-rate");
 let hpView = document.getElementById("hp");
 let gameOverView = document.getElementById("game-over");
@@ -80,8 +78,9 @@ let bulletCooldown = 40; // in ms
 
 // rockets
 let shootingRockets = false;
-let rocketCooldown = 1000; // in ms
+let rocketCooldown = 3000; // in ms
 let lastRocketTime = 0;
+let rocketVelocity = 300;
 
 // asteroids
 let asteroidCooldown = 1000;
@@ -187,18 +186,24 @@ const setupInput = () => {
   });
 
   targetFpsView.addEventListener("change", (event) => {
-    desired_frame_time = 1000 / Math.max(0, Math.min(1000, Number(event.target.value)));
+    event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
+    desired_frame_time = 1000 / event.target.value;
   });
 
   targetUpsView.addEventListener("change", (event) => {
-    desired_delta_time = 1000 / Math.max(0, Math.min(1000, Number(event.target.value)));
+    event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
+    desired_delta_time = 1000 / event.target.value;
   });
 
-  // debug visualizations
+  // debug handlers
   debugVelocityCheckbox.addEventListener("change", (event) => renderer.setVelocityDrawing(event.target.checked));
   debugDrawHitboxes.addEventListener("change", (event) => renderer.setDrawHitboxes(event.target.checked));
   debugDrawTrajectory.addEventListener("change", (event) => renderer.setDrawTrajectory(event.target.checked));
   debugSplinePaths.addEventListener("change", (event) => renderer.setDrawSplinePaths(event.target.checked));
+  debugRocketSpeed.addEventListener("change", (event) => {
+    event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
+    rocketVelocity = event.target.value;
+  });
 
   // button handlers
   pauseResumeButton.addEventListener("click", togglePause);
@@ -340,16 +345,16 @@ const processEvents = (deltaTime) => {
   // movement
   if (spaceship) {
     if (movement.forward) {
-      spaceship.force.y -= 0.0005 * deltaTime;
+      spaceship.force.y -= 0.004;
     }
     if (movement.backward) {
-      spaceship.force.y += 0.0005 * deltaTime;
+      spaceship.force.y += 0.004;
     }
     if (movement.left) {
-      spaceship.force.x -= 0.0005 * deltaTime;
+      spaceship.force.x -= 0.004;
     }
     if (movement.right) {
-      spaceship.force.x += 0.0005 * deltaTime;
+      spaceship.force.x += 0.004;
     }
   }
 };
@@ -406,8 +411,9 @@ const update = (deltaTime) => {
   }
 
   for (const rocket of rockets) {
-    rocket.progress += (deltaTime / 1000) * ROCKET_VELOCITY;
+    rocket.progress += (deltaTime / 1000) * rocketVelocity;
     pathInterpolate(rocket, rocket.progress, (target) => {
+      // console.log("target reached", target);
       target.remove = true;
       ++gameState.asteroidsDestroyed;
       gameState.damageDealt += target?.hp ?? 0;
@@ -447,8 +453,8 @@ const update = (deltaTime) => {
 
   // automatic brake
   if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
-    spaceship.velocity.x *= 0.99;
-    spaceship.velocity.y *= 0.99;
+    spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
+    spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
   }
 
   if (spaceship.position.x < 0 || spaceship.position.x > canvas.width) {
@@ -509,7 +515,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.hp = radius / 2;
 
   const img = new Image();
-  img.src = IMG_DIR + "Asteroid1.png";
+  img.src = asteroid1Url;
   asteroid.texture = img;
 
   // do not spawn asteroids inside each other
@@ -551,7 +557,7 @@ const addRocket = (position, rotation, velocity, angularVelocity, targets) => {
   rocket.radius = 5;
   rocket.targets = targets;
   rocket.progress = 0;
-  rocket.currentTarget = 2;
+  rocket.currentTarget = 0;
   createArcLengthTable(rocket);
   samplePath(rocket);
   renderer.addEntity(renderer.ROCKET, rocket);
@@ -575,12 +581,12 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.hp = 5;
 
   const image = new Image();
-  image.src = IMG_DIR + "Spaceship.png";
+  image.src = spaceshipUrl;
   spaceship.texture = image;
   renderer.addEntity(renderer.SPACESHIP, spaceship);
 
-  addSpaceshipPart({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, IMG_DIR + "WingRight.png", spaceship);
-  addSpaceshipPart({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, IMG_DIR + "WingLeft.png", spaceship);
+  addSpaceshipPart({ x: -5, y: 18 }, 0, renderer.SPACESHIPPART, wingRightUrl, spaceship);
+  addSpaceshipPart({ x: -5, y: -18 }, 0, renderer.SPACESHIPPART, wingLeftUrl, spaceship);
 };
 
 const addSpaceshipPart = (position, rotation, type, image, parent) => {

@@ -62,6 +62,10 @@ export const checkCollision = (a, b) => {
 };
 
 export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
+  if (a.frozen || b.frozen) {
+    return false;
+  }
+
   const distance = distanceBetween(a, b);
   if (distance >= a.radius + b.radius) {
     return false;
@@ -77,15 +81,12 @@ export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
   const overlap = a.radius + b.radius - distance;
 
   if (subOverlap) {
-    if (!a.frozen) {
-      a.position.x -= normal.x * overlap;
-      a.position.y -= normal.y * overlap;
-    }
-    if (!b.frozen) {
-      b.position.x += normal.x * overlap;
-      b.position.y += normal.y * overlap;
-    }
+    a.position.x -= normal.x * overlap;
+    a.position.y -= normal.y * overlap;
+    b.position.x += normal.x * overlap;
+    b.position.y += normal.y * overlap;
   }
+
   a.velocity.x -= momentum * elasticity * b.mass * normal.x;
   a.velocity.y -= momentum * elasticity * b.mass * normal.y;
   b.velocity.x += momentum * elasticity * a.mass * normal.x;

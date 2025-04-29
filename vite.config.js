@@ -1,4 +1,4 @@
 export default {
-  base: process.env.PROD ? "/asteroid-pew-pew/" : "/",
+  base: process.env.NODE_ENV === "production" ? "/asteroid-pew-pew/" : "/",
   publicDir: "res",
 };

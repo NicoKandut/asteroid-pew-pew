@@ -1,4 +1,19 @@
 import * as ht from "../features/SceneHierarchy";
+import boomUrl0 from "/img/boom/boom_0.gif?url";
+import boomUrl1 from "/img/boom/boom_1.gif?url";
+import boomUrl2 from "/img/boom/boom_2.gif?url";
+import boomUrl3 from "/img/boom/boom_3.gif?url";
+import boomUrl4 from "/img/boom/boom_4.gif?url";
+import boomUrl5 from "/img/boom/boom_5.gif?url";
+import boomUrl6 from "/img/boom/boom_6.gif?url";
+import boomUrl7 from "/img/boom/boom_7.gif?url";
+import boomUrl8 from "/img/boom/boom_8.gif?url";
+import boomUrl9 from "/img/boom/boom_9.gif?url";
+import boomUrl10 from "/img/boom/boom_10.gif?url";
+import boomUrl11 from "/img/boom/boom_11.gif?url";
+import boomUrl12 from "/img/boom/boom_12.gif?url";
+import boomUrl13 from "/img/boom/boom_13.gif?url";
+import boomUrl14 from "/img/boom/boom_14.gif?url";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -102,17 +117,25 @@ export const removeAllEntities = () => {
   }
 };
 
-const IMG_DIR = "img/";
-
-const img = new Image();
-img.src = IMG_DIR + "rock.webp";
-
 const boomFrames = [];
 for (let i = 0; i < 15; ++i) {
-  const img = new Image();
-  img.src = IMG_DIR + `boom/boom_${i}.gif`;
-  boomFrames.push(img);
+  boomFrames.push(new Image());
 }
+boomFrames[0].src = boomUrl0;
+boomFrames[1].src = boomUrl1;
+boomFrames[2].src = boomUrl2;
+boomFrames[3].src = boomUrl3;
+boomFrames[4].src = boomUrl4;
+boomFrames[5].src = boomUrl5;
+boomFrames[6].src = boomUrl6;
+boomFrames[7].src = boomUrl7;
+boomFrames[8].src = boomUrl8;
+boomFrames[9].src = boomUrl9;
+boomFrames[10].src = boomUrl10;
+boomFrames[11].src = boomUrl11;
+boomFrames[12].src = boomUrl12;
+boomFrames[13].src = boomUrl13;
+boomFrames[14].src = boomUrl14;
 
 // DRAWING
 export const render = () => {

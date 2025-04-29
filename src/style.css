@@ -1,6 +1,7 @@
 :root {
   /* Colors */
   --accent: goldenrod;
+  --input: gold;
 
   /* Z-index */
   --z-index-blur: 1;
@@ -83,7 +84,7 @@ canvas {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url("/img/space.jpg");
+  background-image: url("/space.jpg");
   background-size: cover;
   filter: contrast(1.2) saturate(0.3);
 }
@@ -221,9 +222,9 @@ label {
   color: white;
 
   > input[type="number"] {
-    width: 4rem;
-    color: var(--accent);
+    color: var(--input);
     background-color: black;
+    width: 4rem;
     border: none;
   }
 
@@ -272,11 +273,11 @@ label {
   }
 
   .game-over-stat :nth-child(2) {
-    color: gold;
+    color: var(--input);
   }
 
   .new-best {
-    color: goldenrod;
+    color: var(--accent);
   }
 
   .previous-best {
