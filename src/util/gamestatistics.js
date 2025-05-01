@@ -8,21 +8,36 @@ const DEFAULT = {
   distanceTraveled: 0,
 };
 
-export const BEST = { ...DEFAULT };
+const BEST_STRING = JSON.stringify(DEFAULT);
+
+const getScoreName = (isPacifist, isStationary) =>
+  "best" + (isPacifist ? "-pacifist" : "-default") + (isStationary ? "-stationary" : "-default");
+
+export const getBest = (isPacifist, isStationary) => {
+  const bestName = getScoreName(isPacifist, isStationary);
+  return JSON.parse(localStorage.getItem(bestName) || BEST_STRING);
+};
+
+export const setBest = (isPacifist, isStationary, best) => {
+  const bestName = getScoreName(isPacifist, isStationary);
+  localStorage.setItem(bestName, JSON.stringify(best));
+};
 
 export const gameState = { ...DEFAULT };
 
-export const resetGameState = () => {
-  // highscores
-  BEST.timePlayed = Math.max(BEST.timePlayed, gameState.timePlayed);
-  BEST.asteroidsDestroyed = Math.max(BEST.asteroidsDestroyed, gameState.asteroidsDestroyed);
-  BEST.damageDealt = Math.max(BEST.damageDealt, gameState.damageDealt);
-  BEST.bulletsFired = Math.max(BEST.bulletsFired, gameState.bulletsFired);
-  BEST.bulletsHit = Math.max(BEST.bulletsHit, gameState.bulletsHit);
-  BEST.rocketsFired = Math.max(BEST.rocketsFired, gameState.rocketsFired);
-  BEST.distanceTraveled = Math.max(BEST.distanceTraveled, gameState.distanceTraveled);
+export const trackScore = (isPacifist, isStationary) => {
+  const best = getBest(isPacifist, isStationary);
+  best.timePlayed = Math.max(best.timePlayed, gameState.timePlayed);
+  best.asteroidsDestroyed = Math.max(best.asteroidsDestroyed, gameState.asteroidsDestroyed);
+  best.damageDealt = Math.max(best.damageDealt, gameState.damageDealt);
+  best.bulletsFired = Math.max(best.bulletsFired, gameState.bulletsFired);
+  best.bulletsHit = Math.max(best.bulletsHit, gameState.bulletsHit);
+  best.rocketsFired = Math.max(best.rocketsFired, gameState.rocketsFired);
+  best.distanceTraveled = Math.max(best.distanceTraveled, gameState.distanceTraveled);
+  localStorage.setItem(getScoreName(isPacifist, isStationary), JSON.stringify(best));
+};
 
-  // reset game state
+export const resetGameState = () => {
   gameState.timePlayed = DEFAULT.timePlayed;
   gameState.asteroidsDestroyed = DEFAULT.asteroidsDestroyed;
   gameState.damageDealt = DEFAULT.damageDealt;

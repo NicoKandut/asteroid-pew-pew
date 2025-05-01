@@ -92,6 +92,10 @@ canvas {
 h1 {
   font-size: 48px;
   text-align: center;
+
+  > span {
+    font-size: inherit;
+  }
 }
 
 #hints {
@@ -115,8 +119,7 @@ kbd {
   border-radius: 5px;
 }
 
-#menu {
-  display: none;
+.menu {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
@@ -132,6 +135,14 @@ kbd {
   z-index: var(--z-index-ui);
   filter: var(--drop-shadow-3d);
   border: 2px solid white;
+
+  &#main-menu {
+    display: flex;
+  }
+
+  &#pause-menu {
+    display: none;
+  }
 }
 
 #stats {
@@ -260,6 +271,13 @@ label {
 
   > h1 {
     grid-column: span 3;
+    display: flex;
+    align-items: center;
+
+    > :first-child {
+      text-align: left;
+      flex-grow: 1;
+    }
   }
 
   > button {
