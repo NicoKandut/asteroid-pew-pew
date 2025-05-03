@@ -97,6 +97,7 @@ export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
       x: (a.position.x + b.position.x) / 2,
       y: (a.position.y + b.position.y) / 2,
     },
+    rotation: Math.random() * Math.PI * 2,
   };
   renderer.addEntity(renderer.FLASH, flash);
   setTimeout(() => renderer.removeEntity(renderer.FLASH, flash.id), 100);

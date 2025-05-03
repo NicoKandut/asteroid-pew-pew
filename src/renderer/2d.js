@@ -365,19 +365,24 @@ export const drawFlames = (entity) => {
 
 const drawFlash = (entity) => {
   const center = entity.position;
+  const rotation = entity.rotation;
   const innerRadius = 3;
   const outerRadius = 15;
 
   context.fillStyle = "white";
   context.beginPath();
-  context.moveTo(center.x + innerRadius, center.y + innerRadius);
-  context.lineTo(center.x + outerRadius, center.y);
-  context.lineTo(center.x + innerRadius, center.y - innerRadius);
-  context.lineTo(center.x, center.y - outerRadius);
-  context.lineTo(center.x - innerRadius, center.y - innerRadius);
-  context.lineTo(center.x - outerRadius, center.y);
-  context.lineTo(center.x - innerRadius, center.y + innerRadius);
-  context.lineTo(center.x, center.y + outerRadius);
+  context.translate(center.x, center.y);
+  context.rotate(rotation);
+  context.moveTo(innerRadius, innerRadius);
+  context.lineTo(outerRadius, 0);
+  context.lineTo(innerRadius, -innerRadius);
+  context.lineTo(0, - outerRadius);
+  context.lineTo(-innerRadius, -innerRadius);
+  context.lineTo(-outerRadius, 0);
+  context.lineTo(-innerRadius, innerRadius);
+  context.lineTo(0, outerRadius);
+  context.resetTransform();
   context.closePath();
   context.fill();
+  
 };
