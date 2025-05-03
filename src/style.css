@@ -30,6 +30,24 @@
   font-size: var(--font-size-normal);
 }
 
+@keyframes shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-1px, -1px);
+  }
+  50% {
+    transform: translate(1px, -1px);
+  }
+  75% {
+    transform: translate(-1px, 1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
 html,
 body,
 h1,
@@ -121,27 +139,52 @@ kbd {
 
 .menu {
   flex-direction: column;
-  align-items: stretch;
   justify-content: center;
-  background-color: #000d;
-  backdrop-filter: blur(2px);
   position: absolute;
   top: 50%;
   left: 50%;
-  padding: 1rem;
   transform: translate(-50%, -50%);
-  gap: var(--normal-gap);
-  width: 420px;
   z-index: var(--z-index-ui);
-  filter: var(--drop-shadow-3d);
-  border: 2px solid white;
 
   &#main-menu {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto auto 1fr;
+    align-items: center;
+    gap: var(--normal-gap);
+    width: 100%;
+
+    > h1 {
+      font-size: 100px;
+      grid-column: span 4;
+    }
+
+    > button {
+      grid-column: 2 / span 2;
+    }
+
+    > label {
+      display: contents;
+
+      > span {
+        grid-column: 2;
+      }
+
+      > input {
+        grid-column: 3;
+      }
+    }
   }
 
   &#pause-menu {
     display: none;
+    align-items: stretch;
+    background-color: #000d;
+    backdrop-filter: blur(2px);
+    padding: 1rem;
+    gap: var(--normal-gap);
+    width: 420px;
+    filter: var(--drop-shadow-3d);
+    border: 2px solid white;
   }
 }
 
@@ -219,6 +262,13 @@ button {
     border-color: goldenrod;
     color: black;
     cursor: pointer;
+    animation: shake 0.1s ease-in-out infinite;
+  }
+
+  &.negative:hover {
+    background-color: red;
+    border-color: red;
+    color: black;
   }
 
   &:active {
@@ -237,6 +287,10 @@ label {
     background-color: black;
     width: 4rem;
     border: none;
+
+    &:hover {
+      animation: shake 0.1s ease-in-out infinite;
+    }
   }
 
   > input[type="range"] {
@@ -247,6 +301,10 @@ label {
     margin: unset;
     width: 26px;
     height: 26px;
+
+    &:hover {
+      animation: shake 0.1s ease-in-out infinite;
+    }
   }
 }
 
@@ -262,7 +320,7 @@ label {
   left: 50%;
   padding: 1rem;
   transform: translate(-50%, -50%);
-  gap: var(--small-gap);
+  gap: var(--small-gap) var(--normal-gap);
   width: 550px;
   font-size: 24px;
   z-index: var(--z-index-ui);
@@ -296,6 +354,7 @@ label {
 
   .new-best {
     color: var(--accent);
+    animation: shake 0.1s ease-in-out infinite;
   }
 
   .previous-best {

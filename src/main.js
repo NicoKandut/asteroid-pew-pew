@@ -6,6 +6,7 @@ import { angleToUnitVector, scale } from "./util/linalg.js";
 import { gameState, getBest, resetGameState, trackScore } from "./util/gamestatistics.js";
 import {
   playAsteroidCollisionSound,
+  playBackgroundMusic,
   playBulletHitSound,
   playBulletShootSound,
   playExplosionSound,
@@ -17,6 +18,10 @@ import asteroid1Url from "/img/Asteroid1.png?url";
 import spaceshipUrl from "/img/Spaceship.png?url";
 import wingLeftUrl from "/img/WingLeft.png?url";
 import wingRightUrl from "/img/WingRight.png?url";
+import * as ui from "./util/ui.js";
+
+// DOM elements
+let canvas = document.getElementsByTagName("canvas")[0];
 
 const BULLET_MASS = 2000;
 const ROCKET_PIERCING = 3;
@@ -27,53 +32,29 @@ const calculateAsteroidMass = (radius) => {
 };
 
 // game state
-let paused = false;
-
-// DOM elements
-let canvas = document.getElementsByTagName("canvas")[0];
-let entityCountView = document.getElementById("entity-count");
-let fpsView = document.getElementById("fps");
-let upsView = document.getElementById("ups");
-let targetFpsView = document.getElementById("target-fps");
-let targetUpsView = document.getElementById("target-ups");
-let pauseMenuView = document.getElementById("pause-menu");
-let mainMenuView = document.getElementById("main-menu");
-let pauseResumeButton = document.getElementById("pause-resume");
-let debugVelocityCheckbox = document.getElementById("debug-velocity");
-let debugDrawHitboxes = document.getElementById("debug-hitbox");
-let debugDrawTrajectory = document.getElementById("debug-trajectory");
-let debugSplinePaths = document.getElementById("debug-spline-paths");
-let debugRocketSpeed = document.getElementById("debug-rocket-speed");
-let fireRateView = document.getElementById("fire-rate");
-let hpView = document.getElementById("hp");
-let gameOverView = document.getElementById("game-over");
-let timePlayedView = document.getElementById("time-played");
-let asteroidsDestroyedView = document.getElementById("asteroids-destroyed");
-let distanceTraveledView = document.getElementById("distance-traveled");
-let damageDealtView = document.getElementById("damage-dealt");
-let startButton = document.getElementById("start");
-let restartButton = document.getElementById("restart");
-let volumeSlider = document.getElementById("volume");
-let modePacifistView = document.getElementById("mode-pacifist");
-let modeStationaryView = document.getElementById("mode-stationary");
-let markPacifistView = document.getElementById("mark-pacifist");
-let markStationaryView = document.getElementById("mark-stationary");
+let paused = true;
+const resume = () => (paused = false);
+let frameHandle;
 
 // fps / ups settings
 let desired_delta_time = 1000 / 120;
+const setDesiredDeltaTime = (value) => (desired_delta_time = value);
 let desired_frame_time = 1000 / 60;
+const setDesiredFrameTime = (value) => (desired_frame_time = value);
 
 let lastFrameTime = 0;
 let lastUpdateTime = 0;
 let lastSummaryTime = 0;
 
+let weaponsEnabled = true;
+const setWeaponsEnabled = (enabled) => (weaponsEnabled = enabled);
+
+let movementEnabled = true;
+const setMovementEnabled = (enabled) => (movementEnabled = enabled);
+
 // statistics
 let updatesLastSecond = 0;
 let framesLastSecond = 0;
-
-// features
-let weaponsEnabled = true;
-let movementEnabled = true;
 
 // entities
 let asteroids = [];
@@ -82,6 +63,7 @@ let rockets = [];
 let spaceship = null;
 
 // shooting
+let bulletIndex = 0;
 let shootingBullets = false;
 let lastBulletTime = 0;
 let bulletCooldown = 40; // in ms
@@ -91,10 +73,12 @@ let shootingRockets = false;
 let rocketCooldown = 3000; // in ms
 let lastRocketTime = 0;
 let rocketVelocity = 300;
+const setRocketSpeed = (value) => (rocketVelocity = value);
 
 // asteroids
 let asteroidCooldown = 1000;
 let lastAsteroidTime = 0;
+const computeAsteroidCooldown = (elapsed) => Math.pow(0.99, elapsed / 1000) * 1000;
 
 let movement = {
   forward: false,
@@ -107,46 +91,49 @@ const main = () => {
   lastFrameTime = performance.now();
   lastSummaryTime = lastFrameTime;
 
-  setupInput();
-  initUI();
+  initInput();
+  ui.init(
+    startGame,
+    setWeaponsEnabled,
+    setMovementEnabled,
+    setVolumeModifier,
+    setDesiredFrameTime,
+    setDesiredDeltaTime,
+    setRocketSpeed,
+    resume,
+    resetGame
+  );
+
+  // playBackgroundMusic();
 };
 
-const initGame = () => {
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
-  addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
-};
-
-let bulletIndex = 0;
-let now = performance.now();
-
-const setupInput = () => {
+const initInput = () => {
   document.addEventListener("keydown", (event) => {
     switch (event.key) {
       case "Escape":
         togglePause();
         break;
       case " ":
-        shootingBullets = weaponsEnabled;
+        shootingBullets = !paused && weaponsEnabled;
         break;
-      case "q":
-        shootingRockets = weaponsEnabled;
+      case "Shift":
+        shootingRockets = !paused && weaponsEnabled;
         break;
       case "ArrowUp":
       case "w":
-        movement.forward = movementEnabled;
+        movement.forward = !paused && movementEnabled;
         break;
       case "ArrowDown":
       case "s":
-        movement.backward = movementEnabled;
+        movement.backward = !paused && movementEnabled;
         break;
       case "ArrowLeft":
       case "a":
-        movement.left = movementEnabled;
+        movement.left = !paused && movementEnabled;
         break;
       case "ArrowRight":
       case "d":
-        movement.right = movementEnabled;
+        movement.right = !paused && movementEnabled;
         break;
     }
   });
@@ -156,7 +143,7 @@ const setupInput = () => {
       case " ":
         shootingBullets = false;
         break;
-      case "q":
+      case "Shift":
         shootingRockets = false;
         break;
       case "ArrowUp":
@@ -179,62 +166,18 @@ const setupInput = () => {
   });
 
   document.addEventListener("mousemove", (event) => {
-    const x_canvas = event.clientX - canvas.getBoundingClientRect().left;
-    const y_canvas = event.clientY - canvas.getBoundingClientRect().top;
-
-    // set rotation of spaceship to face cursor
-    if (spaceship) {
-      const dx = x_canvas - spaceship.position.x;
-      const dy = y_canvas - spaceship.position.y;
-      spaceship.rotation = Math.atan2(dy, dx);
+    if (paused || spaceship == null) {
+      return;
     }
-  });
-
-  targetFpsView.addEventListener("change", (event) => {
-    event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
-    desired_frame_time = 1000 / event.target.value;
-  });
-
-  targetUpsView.addEventListener("change", (event) => {
-    event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
-    desired_delta_time = 1000 / event.target.value;
-  });
-
-  // debug handlers
-  debugVelocityCheckbox.addEventListener("change", (event) => renderer.setVelocityDrawing(event.target.checked));
-  debugDrawHitboxes.addEventListener("change", (event) => renderer.setDrawHitboxes(event.target.checked));
-  debugDrawTrajectory.addEventListener("change", (event) => renderer.setDrawTrajectory(event.target.checked));
-  debugSplinePaths.addEventListener("change", (event) => renderer.setDrawSplinePaths(event.target.checked));
-  debugRocketSpeed.addEventListener("change", (event) => {
-    event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
-    rocketVelocity = event.target.value;
-  });
-
-  // button handlers
-  pauseResumeButton.addEventListener("click", togglePause);
-  startButton.addEventListener("click", () => {
-    mainMenuView.style.display = "none";
-    initGame();
-    requestAnimationFrame(doFrame);
-  });
-
-  restartButton.addEventListener("click", resetGame);
-
-  // volume control
-  volumeSlider.addEventListener("input", (event) => setVolumeModifier(event.target.value / 100));
-
-  // mode selection
-  modePacifistView.addEventListener("change", (event) => {
-    weaponsEnabled = !event.target.checked;
-  });
-  modeStationaryView.addEventListener("change", (event) => {
-    movementEnabled = !event.target.checked;
+    const x = event.clientX - canvas.getBoundingClientRect().left;
+    const y = event.clientY - canvas.getBoundingClientRect().top;
+    const dx = x - spaceship.position.x;
+    const dy = y - spaceship.position.y;
+    spaceship.rotation = Math.atan2(dy, dx);
   });
 };
 
-const initUI = () => {
-  fireRateView.innerText = `${Math.round(1000 / bulletCooldown)}`;
-};
+let now = performance.now();
 
 const doFrame = () => {
   now = performance.now();
@@ -264,9 +207,8 @@ const doFrame = () => {
 
   // every second, update the UI
   if (now - lastSummaryTime >= 1000) {
-    entityCountView.innerText = `${asteroids.length + bullets.length + rockets.length + (spaceship ? 1 : 0)}`;
-    fpsView.innerText = `${framesLastSecond}`;
-    upsView.innerText = `${updatesLastSecond}`;
+    const entityCount = asteroids.length + bullets.length + rockets.length + (spaceship ? 1 : 0);
+    ui.updateDebugHeader(entityCount, framesLastSecond, updatesLastSecond);
 
     framesLastSecond = 0;
     updatesLastSecond = 0;
@@ -275,7 +217,7 @@ const doFrame = () => {
   }
 
   // framerate is controlled by the browser
-  requestAnimationFrame(doFrame);
+  frameHandle = requestAnimationFrame(doFrame);
 };
 
 const processEvents = (deltaTime) => {
@@ -354,11 +296,7 @@ const processEvents = (deltaTime) => {
     const radius = randomAsteroidSize();
     addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius);
     lastAsteroidTime = now;
-
-    asteroidCooldown *= (Math.random() - 0.6) * 0.2 + 1;
-    asteroidCooldown = Math.max(asteroidCooldown, 300);
-    asteroidCooldown = Math.min(asteroidCooldown, 2000);
-    // console.log(asteroidCooldown);
+    asteroidCooldown = computeAsteroidCooldown(gameState.timePlayed);
   }
 
   // movement
@@ -454,14 +392,13 @@ const update = (deltaTime) => {
       spaceship.hp -= 1;
       playSpaceshipCollisionSound();
       if (spaceship.hp >= 0) {
-        hpView.children.item(spaceship.hp).style.color = "grey";
+        ui.updateHp(spaceship.hp);
       }
       if (spaceship.hp <= 0) {
         playExplosionSound();
         removeSpaceshipFromRenderer();
-        spaceship.frame = 0;
         setPropulsionVolume(0);
-        renderer.addEntity(renderer.EXPLOSION, spaceship);
+        renderer.addEntity(renderer.EXPLOSION, { position: { ...spaceship.position }, frame: 0 });
         setTimeout(() => {
           endGame();
         }, 1000);
@@ -643,8 +580,12 @@ const addFlames = (position, rotation, parent) => {
 
 const togglePause = () => {
   paused = !paused;
-  pauseResumeButton.innerText = paused ? "Resume" : "Pause";
-  pauseMenuView.style.display = paused ? "flex" : "none";
+  if (paused) {
+    ui.showPauseMenu();
+    setPropulsionVolume(0);
+  } else {
+    ui.hidePauseMenu();
+  }
 };
 
 const removeSpaceshipFromRenderer = () => {
@@ -659,36 +600,30 @@ const removeSpaceshipFromRenderer = () => {
   }
 };
 
+const initGame = () => {
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
+};
+
+const startGame = () => {
+  initGame();
+  resume();
+  frameHandle = requestAnimationFrame(doFrame);
+};
+
 const endGame = () => {
+  cancelAnimationFrame(frameHandle);
   paused = true;
   setPropulsionVolume(0);
+  spaceship = null;
 
   const best = getBest(!weaponsEnabled, !movementEnabled);
 
-  markPacifistView.style.display = weaponsEnabled ? "none" : "block";
-  markStationaryView.style.display = movementEnabled ? "none" : "block";
-
-  setGameOverStat(timePlayedView, (gameState.timePlayed / 1000).toFixed(1), (best.timePlayed / 1000).toFixed(1), "s");
-  setGameOverStat(asteroidsDestroyedView, gameState.asteroidsDestroyed, best.asteroidsDestroyed);
-  setGameOverStat(distanceTraveledView, gameState.distanceTraveled.toFixed(1), best.distanceTraveled.toFixed(1), "m");
-  setGameOverStat(damageDealtView, gameState.damageDealt, best.damageDealt, "hp");
+  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, gameState, best);
+  ui.showGameOverMenu();
 
   trackScore(!weaponsEnabled, !movementEnabled);
-
-  gameOverView.style.display = "grid";
-};
-
-const setGameOverStat = (view, value, best, unit) => {
-  view.children.item(1).innerText = unit ? `${value} ${unit}` : `${value}`;
-  view.children.item(2).classList.remove("new-best");
-  view.children.item(2).classList.remove("previous-best");
-  if (value > best) {
-    view.children.item(2).classList.add("new-best");
-    view.children.item(2).innerText = "New best!";
-  } else {
-    view.children.item(2).classList.add("previous-best");
-    view.children.item(2).innerText = `( Best: ${unit ? `${best} ${unit}` : best} )`;
-  }
 };
 
 const resetGame = () => {
@@ -699,16 +634,9 @@ const resetGame = () => {
   rockets = [];
   asteroidCooldown = 1000;
 
-  for (let heart of hpView.children) {
-    heart.style.color = "red";
-  }
-
-  gameOverView.style.display = "none";
-  pauseMenuView.style.display = "none";
-
-  initGame();
-
-  paused = false;
+  ui.updateHp(5);
+  ui.hidePauseMenu();
+  ui.hideGameOverMenu();
 };
 
 main();

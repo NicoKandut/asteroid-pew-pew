@@ -1,11 +1,16 @@
 import propulsionUrl from "/audio/propulsion.mp3?url";
 import bonkUrl from "/audio/bonk.mp3?url";
-import explosionUrl from "/audio/explosion.mp3?url";
-import laserUrl from "/audio/laser.mp3?url";
-import metalHitUrl from "/audio/metal-hit.mp3?url";
+import explosionUrl from "/audio/explosion.wav?url";
+import laserUrl from "/audio/shoot.wav?url";
+import hurtUrl from "/audio/hurt.wav?url";
+import hitUrl from "/audio/hit.wav?url";
+import clickUrl from "/audio/click.wav?url";
+import submitUrl from "/audio/submit.wav?url";
+import backgroundMusicUrl from "/audio/CODEX_2015.mp3?url";
 
 let volumeModifier = 0.5;
 export const setVolumeModifier = (value) => {
+  backgroundMusic.volume = 0.05 * value;
   volumeModifier = value;
 };
 
@@ -19,32 +24,52 @@ export const setPropulsionVolume = (value) => {
   audioPropulsion.volume = value * volumeModifier;
 };
 
+export const playSubmitSound = () => {
+  const audio = new Audio(submitUrl);
+  audio.volume = 0.5 * volumeModifier;
+  audio.play().catch(() => {});
+};
+
+export const playClickSound = () => {
+  const audio = new Audio(clickUrl);
+  audio.volume = 0.5 * volumeModifier;
+  audio.play().catch(() => {});
+};
+
 export const playAsteroidCollisionSound = () => {
-  const audio = new Audio(bonkUrl);
+  const audio = new Audio(hitUrl);
   audio.volume = 0.1 * volumeModifier;
   audio.play().catch(() => {});
 };
 
 export const playSpaceshipCollisionSound = () => {
-  const audio = new Audio(metalHitUrl);
-  audio.volume = 0.1 * volumeModifier;
+  const audio = new Audio(hurtUrl);
+  audio.volume = 0.3 * volumeModifier;
   audio.play().catch(() => {});
 };
 
 export const playBulletShootSound = () => {
   const audio = new Audio(laserUrl);
-  audio.volume = 0.3 * volumeModifier;
+  audio.volume = 0.1 * volumeModifier;
   audio.play().catch(() => {});
 };
 
 export const playBulletHitSound = () => {
-  // const audio = new Audio(laserUrl);
-  // audio.volume = 0.3 * volumeModifier;
-  // audio.play().catch(() => {});
+  const audio = new Audio(hitUrl);
+  audio.volume = 0.2 * volumeModifier;
+  audio.play().catch(() => {});
 };
 
 export const playExplosionSound = () => {
   const audio = new Audio(explosionUrl);
-  audio.volume = 0.1 * volumeModifier;
+  audio.volume = 0.3 * volumeModifier;
   audio.play().catch(() => {});
+};
+
+const backgroundMusic = new Audio(backgroundMusicUrl);
+backgroundMusic.volume = 0.05 * volumeModifier;
+backgroundMusic.loop = true;
+
+export const playBackgroundMusic = () => {
+  backgroundMusic.play().catch(() => {});
 };

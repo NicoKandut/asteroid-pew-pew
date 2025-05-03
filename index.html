@@ -29,7 +29,7 @@
       <div><kbd>Esc</kbd> Pause</div>
       <div><kbd>WASD</kbd> Move</div>
       <div><kbd>Space</kbd> Shoot</div>
-      <div><kbd>Q</kbd> Rocket</div>
+      <div><kbd>Shift</kbd> Rocket</div>
     </section>
     <section id="stats">
       <div>Fire rate: <span id="fire-rate">10.0</span></div>
@@ -48,16 +48,16 @@
       <h1>Asteroid Pew Pew</h1>
       <button id="start">Start</button>
       <label for="mode-pacifist">
-        ☮️ Pacifist
+        <span>☮️ Pacifist</span>
         <input type="checkbox" id="mode-pacifist" />
       </label>
       <label for="mode-stationary">
-        ⚓ Stationary
+        <span>⚓ Stationary</span>
         <input type="checkbox" id="mode-stationary" />
       </label>
     </section>
     <section id="pause-menu" class="menu">
-      <h1>Paused</h1>
+      <h1>Resume</h1>
       <label for="target-fps">
         Volume
         <input type="range" id="volume" min="0" max="100" value="50" />
@@ -112,7 +112,7 @@
         <span>0</span>
         <span>New Best!</span>
       </p>
-      <p id="distance-traveled" class="game-over-stat">
+    <p id="distance-traveled" class="game-over-stat">
         <span>Distance Traveled:</span>
         <span>0</span>
         <span>New Best!</span>
@@ -123,6 +123,7 @@
         <span>New Best!</span>
       </p>
       <button id="restart">Restart</button>
+      <button id="back-to-main-menu" class="negative">Main Menu</button>
     </section>
   </main>
   <script type="module" src="/src/main.js"></script>
