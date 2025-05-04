@@ -1,133 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Lexend:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asteroid Pew Pew</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="90x90" />
+  </head>
 
-<head>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Lexend:wght@100..900&display=swap"
-    rel="stylesheet" />
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asteroid Pew Pew</title>
-  <link rel="stylesheet" href="/src/style.css" />
-  <link rel="icon" type="image/png" href="/favicon.png" sizes="90x90" />
-</head>
-
-<body>
-  <header>
-    <div><span id="entity-count">?</span>Entities</div>
-    <div><span id="fps">?</span> FPS</div>
-    <div><span id="ups">?</span> UPS</div>
-  </header>
-  <main>
-    <div id="bg"></div>
-    <canvas></canvas>
-    <section id="overlay-blur" class="overlay"></section>
-    <section id="overlay-saturate" class="overlay"></section>
-    <section id="overlay-scanlines" class="overlay"></section>
-    <section id="hints">
-      <div><kbd>Esc</kbd> Pause</div>
-      <div><kbd>WASD</kbd> Move</div>
-      <div><kbd>Space</kbd> Shoot</div>
-      <div><kbd>Shift</kbd> Rocket</div>
-    </section>
-    <section id="stats">
-      <div>Fire rate: <span id="fire-rate">10.0</span></div>
-      <div>
-        HP:
-        <ul id="hp">
-          <li>❤</li>
-          <li>❤</li>
-          <li>❤</li>
-          <li>❤</li>
-          <li>❤</li>
-        </ul>
-      </div>
-    </section>
-    <section id="main-menu" class="menu">
-      <h1>Asteroid Pew Pew</h1>
-      <button id="start">Start</button>
-      <label for="mode-pacifist">
-        <span>☮️ Pacifist</span>
-        <input type="checkbox" id="mode-pacifist" />
-      </label>
-      <label for="mode-stationary">
-        <span>⚓ Stationary</span>
-        <input type="checkbox" id="mode-stationary" />
-      </label>
-    </section>
-    <section id="pause-menu" class="menu">
-      <h1>Paused</h1>
-      <label for="target-fps">
-        Volume
-        <input type="range" id="volume" min="0" max="100" value="50" />
-      </label>
-      <label for="target-fps">
-        Target FPS
-        <input type="number" id="target-fps" value="60" min="0" max="1000" />
-      </label>
-      <label for="target-ups">
-        Target UPS
-        <input type="number" id="target-ups" value="120" min="0" max="1000" />
-      </label>
-      <!-- <label for="flame-length">
+  <body>
+    <header>
+      <div><span id="entity-count">?</span>Entities</div>
+      <div><span id="fps">?</span> FPS</div>
+      <div><span id="ups">?</span> UPS</div>
+    </header>
+    <main>
+      <div id="bg"></div>
+      <canvas></canvas>
+      <section id="overlay-blur" class="overlay"></section>
+      <section id="overlay-saturate" class="overlay"></section>
+      <section id="overlay-scanlines" class="overlay"></section>
+      <section id="hints">
+        <div id="controls-pause"><kbd>Esc</kbd> Pause</div>
+        <div id="controls-move"><kbd>WASD</kbd> Move</div>
+        <div id="controls-bullet"><kbd>Space</kbd> Shoot</div>
+        <div id="controls-rocket"><kbd>Shift</kbd> Rocket</div>
+      </section>
+      <section id="stats">
+        <div>Fire rate: <span id="fire-rate">10.0</span> shots/s</div>
+        <div>Damage: <span id="bullet-damage">1.0</span> hp</div>
+        <div>Rocket piercing: <span id="rocket-piercing">3</span> targets</div>
+        <div>
+          HP:
+          <ul id="hp">
+            <li>❤</li>
+            <li>❤</li>
+            <li>❤</li>
+            <li>❤</li>
+            <li>❤</li>
+          </ul>
+        </div>
+      </section>
+      <section id="main-menu" class="menu">
+        <h1>Asteroid Pew Pew</h1>
+        <button id="start" class="positive">Play</button>
+        <label for="mode-pacifist">
+          <span>☮️ Pacifist</span>
+          <input type="checkbox" id="mode-pacifist" />
+        </label>
+        <label for="mode-stationary">
+          <span>⚓ Stationary</span>
+          <input type="checkbox" id="mode-stationary" />
+        </label>
+      </section>
+      <section id="pause-menu" class="menu">
+        <h1>Paused</h1>
+        <label for="target-fps">
+          Volume
+          <input type="range" id="volume" min="0" max="100" value="50" />
+        </label>
+        <label for="target-fps">
+          Target FPS
+          <input type="number" id="target-fps" value="60" min="0" max="1000" />
+        </label>
+        <label for="target-ups">
+          Target UPS
+          <input type="number" id="target-ups" value="120" min="0" max="1000" />
+        </label>
+        <!-- <label for="flame-length">
           Flame Length
           <input type="number" id="target-fps" value="60" min="10" max="1000"/>
         </label> -->
-      <label for="debug-velocity">
-        [DEBUG] Draw velocity vectors
-        <input type="checkbox" id="debug-velocity" />
-      </label>
-      <label for="debug-hitbox">
-        [DEBUG] Draw Hitboxes
-        <input type="checkbox" id="debug-hitbox" />
-      </label>
-      <label for="debug-trajectory">
-        [DEBUG] Draw Trajectories
-        <input type="checkbox" id="debug-trajectory" />
-      </label>
-      <label for="debug-spline-paths">
-        [DEBUG] Draw Spline Paths
-        <input type="checkbox" id="debug-spline-paths" />
-      </label>
-      <label for="debug-rocket-speed">
-        [DEBUG] Rocket Speed
-        <input type="number" id="debug-rocket-speed" value="300" min="0" max="1000" />
-      </label>
-      <button id="pause-resume">Resume</button>
-      <button id="pause-back-to-main-menu" class="negative">Main Menu</button>
-    </section>
-    <section id="game-over">
-      <h1>
-        <span>Game Over</span>
-        <span id="mark-pacifist">☮️</span>
-        <span id="mark-stationary">⚓</span>
-      </h1>
-      <p id="time-played" class="game-over-stat">
-        <span>Time Played:</span>
-        <span>0</span>
-        <span>New Best!</span>
-      </p>
-      <p id="asteroids-destroyed" class="game-over-stat">
-        <span>Asteroids destroyed:</span>
-        <span>0</span>
-        <span>New Best!</span>
-      </p>
-    <p id="distance-traveled" class="game-over-stat">
-        <span>Distance Traveled:</span>
-        <span>0</span>
-        <span>New Best!</span>
-      </p>
-      <p id="damage-dealt" class="game-over-stat">
-        <span>Damage Dealt:</span>
-        <span>0</span>
-        <span>New Best!</span>
-      </p>
-      <button id="restart">Restart</button>
-      <button id="back-to-main-menu" class="negative">Main Menu</button>
-    </section>
-  </main>
-  <script type="module" src="/src/main.js"></script>
-</body>
-
+        <label for="debug-velocity">
+          [DEBUG] Draw velocity vectors
+          <input type="checkbox" id="debug-velocity" />
+        </label>
+        <label for="debug-hitbox">
+          [DEBUG] Draw Hitboxes
+          <input type="checkbox" id="debug-hitbox" />
+        </label>
+        <label for="debug-trajectory">
+          [DEBUG] Draw Trajectories
+          <input type="checkbox" id="debug-trajectory" />
+        </label>
+        <label for="debug-spline-paths">
+          [DEBUG] Draw Spline Paths
+          <input type="checkbox" id="debug-spline-paths" />
+        </label>
+        <label for="debug-rocket-speed">
+          [DEBUG] Rocket Speed
+          <input type="number" id="debug-rocket-speed" value="300" min="0" max="1000" />
+        </label>
+        <button id="pause-resume" class="positive">Resume</button>
+        <button id="pause-back-to-main-menu" class="negative">Main Menu</button>
+      </section>
+      <section id="game-over">
+        <h1>
+          <span>Game Over</span>
+          <span id="mark-pacifist">☮️</span>
+          <span id="mark-stationary">⚓</span>
+        </h1>
+        <p id="time-played" class="game-over-stat">
+          <span>Time Played:</span>
+          <span>0</span>
+          <span>New Best!</span>
+        </p>
+        <p id="asteroids-destroyed" class="game-over-stat">
+          <span>Asteroids destroyed:</span>
+          <span>0</span>
+          <span>New Best!</span>
+        </p>
+        <p id="distance-traveled" class="game-over-stat">
+          <span>Distance Traveled:</span>
+          <span>0</span>
+          <span>New Best!</span>
+        </p>
+        <p id="damage-dealt" class="game-over-stat">
+          <span>Damage Dealt:</span>
+          <span>0</span>
+          <span>New Best!</span>
+        </p>
+        <button id="restart" class="positive">Restart</button>
+        <button id="back-to-main-menu" class="negative">Main Menu</button>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>

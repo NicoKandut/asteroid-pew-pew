@@ -30,7 +30,6 @@ import * as ui from "./util/ui.js";
 let canvas = document.getElementsByTagName("canvas")[0];
 
 const BULLET_MASS = 2000;
-const ROCKET_PIERCING = 3;
 
 const calculateAsteroidMass = (radius) => {
   const density = 3.5;
@@ -69,12 +68,14 @@ let rockets = [];
 let spaceship = null;
 
 // shooting
+let bulletDamage = 1;
 let bulletIndex = 0;
 let shootingBullets = false;
 let lastBulletTime = 0;
 let bulletCooldown = 40; // in ms
 
 // rockets
+let rocketPiercing = 3;
 let shootingRockets = false;
 let rocketCooldown = 3000; // in ms
 let lastRocketTime = 0;
@@ -127,18 +128,22 @@ const initInput = () => {
         break;
       case "ArrowUp":
       case "w":
+      case "W":
         movement.forward = !paused && movementEnabled;
         break;
       case "ArrowDown":
       case "s":
+      case "S":
         movement.backward = !paused && movementEnabled;
         break;
       case "ArrowLeft":
       case "a":
+      case "A":
         movement.left = !paused && movementEnabled;
         break;
       case "ArrowRight":
       case "d":
+      case "D":
         movement.right = !paused && movementEnabled;
         break;
     }
@@ -154,18 +159,22 @@ const initInput = () => {
         break;
       case "ArrowUp":
       case "w":
+      case "W":
         movement.forward = false;
         break;
       case "ArrowDown":
       case "s":
+      case "S":
         movement.backward = false;
         break;
       case "ArrowLeft":
       case "a":
+      case "A":
         movement.left = false;
         break;
       case "ArrowRight":
       case "d":
+      case "D":
         movement.right = false;
         break;
     }
@@ -262,7 +271,7 @@ const processEvents = (deltaTime) => {
         },
       },
     ];
-    for (let i = 0; i < Math.min(ROCKET_PIERCING, asteroids.length); i++) {
+    for (let i = 0; i < Math.min(rocketPiercing, asteroids.length); i++) {
       let asteroid;
       do {
         asteroid = asteroids[Math.floor(Math.random() * asteroids.length)];
@@ -363,10 +372,10 @@ const update = (deltaTime) => {
     }
     for (const asteroid of asteroids) {
       if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
-        bullet.remove = true;
-        asteroid.hp -= 1;
         gameState.bulletsHit++;
-        gameState.damageDealt++;
+        gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
+        asteroid.hp -= bulletDamage;
+        bullet.remove = true;
         playBulletHitSound();
         if (asteroid.hp <= 0) {
           ++gameState.asteroidsDestroyed;
@@ -380,10 +389,9 @@ const update = (deltaTime) => {
   for (const rocket of rockets) {
     rocket.progress += (deltaTime / 1000) * rocketVelocity;
     pathInterpolate(rocket, rocket.progress, (target) => {
-      // console.log("target reached", target);
       target.remove = true;
       ++gameState.asteroidsDestroyed;
-      gameState.damageDealt += target?.hp ?? 0;
+      gameState.damageDealt += target.hp;
       playExplosionSound();
     });
   }
@@ -438,6 +446,7 @@ const update = (deltaTime) => {
 
 const cleanUpEntities = () => {
   // TODO: clean up entity removal. very clumsy atm.
+
   // remove entities that are out of bounds
   asteroids.forEach((asteroid) => {
     if (asteroid.remove) {
@@ -467,7 +476,9 @@ const cleanUpEntities = () => {
   rockets = rockets.filter((rocket) => !rocket.remove);
 };
 
-// TODO: combine all these functions? They don't add much
+const imgAsteroid = new Image();
+imgAsteroid.src = asteroid1Url;
+
 const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius) => {
   const asteroid = createPhysicsEntity();
   asteroid.position = position;
@@ -479,10 +490,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.radius = radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
   asteroid.hp = radius / 2;
-
-  const img = new Image();
-  img.src = asteroid1Url;
-  asteroid.texture = img;
+  asteroid.texture = imgAsteroid;
 
   // do not spawn asteroids inside each other
   // do not spawn asteroids on top of other entities
@@ -571,7 +579,7 @@ const addSpaceshipPart = (position, rotation, type, image, parent) => {
   parent.children ??= parent.children || [];
   parent.children.push(part);
 
-  addFlames({ x: -5, y: 0 }, 1.5707964, part);
+  addFlames({ x: -5, y: 0 }, Math.PI / 2, part);
 };
 
 const addFlames = (position, rotation, parent) => {

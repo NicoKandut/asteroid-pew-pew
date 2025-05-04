@@ -2,6 +2,8 @@
   /* Colors */
   --accent: goldenrod;
   --input: gold;
+  --negative: red;
+  --positive: green;
 
   /* Z-index */
   --z-index-blur: 1;
@@ -128,11 +130,14 @@ h1 {
   width: 100%;
   z-index: var(--z-index-ui);
   filter: var(--drop-shadow-3d);
+
+  > div[disabled="true"] {
+    color: var(--negative);
+  }
 }
 
 kbd {
-  border: 3px solid white;
-  color: white;
+  border: 3px solid currentColor;
   padding: 0.1rem 0.5rem;
   border-radius: 5px;
 }
@@ -207,6 +212,10 @@ kbd {
     align-items: center;
   }
 
+  span {
+    color: var(--accent);
+  }
+
   #hp {
     margin: unset;
     padding: unset;
@@ -265,10 +274,14 @@ button {
     animation: shake 0.1s ease-in-out infinite;
   }
 
+  &.positive:hover {
+    background-color: var(--positive);
+    border-color: var(--positive);
+  }
+
   &.negative:hover {
-    background-color: red;
-    border-color: red;
-    color: black;
+    background-color: var(--negative);
+    border-color: var(--negative);
   }
 
   &:active {
