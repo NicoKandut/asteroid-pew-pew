@@ -30,6 +30,7 @@ const modeStationaryView = document.getElementById("mode-stationary");
 const markPacifistView = document.getElementById("mark-pacifist");
 const markStationaryView = document.getElementById("mark-stationary");
 const backToMainMenuButton = document.getElementById("back-to-main-menu");
+const pauseBackToMainMenuButton = document.getElementById("pause-back-to-main-menu");
 
 export const init = (
   start,
@@ -112,6 +113,11 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
     hidePauseMenu();
     resume();
   });
+  pauseBackToMainMenuButton.addEventListener("click", () => {
+    playSubmitSound();
+    hidePauseMenu();
+    showMainMenu();
+  });
 };
 
 export const showPauseMenu = () => {
@@ -148,22 +154,25 @@ export const updateGameOverMenu = (weaponsEnabled, movementEnabled, current, bes
   markPacifistView.style.display = weaponsEnabled ? "none" : "block";
   markStationaryView.style.display = movementEnabled ? "none" : "block";
 
-  setGameOverStat(timePlayedView, (current.timePlayed / 1000).toFixed(1), (best.timePlayed / 1000).toFixed(1), "s");
+  setGameOverStat(timePlayedView, current.timePlayed / 1000, best.timePlayed / 1000, "s", 1);
   setGameOverStat(asteroidsDestroyedView, current.asteroidsDestroyed, best.asteroidsDestroyed);
-  setGameOverStat(distanceTraveledView, current.distanceTraveled.toFixed(1), best.distanceTraveled.toFixed(1), "m");
-  setGameOverStat(damageDealtView, current.damageDealt, best.damageDealt, "hp");
+  setGameOverStat(distanceTraveledView, current.distanceTraveled, best.distanceTraveled, "m", 1);
+  setGameOverStat(damageDealtView, current.damageDealt, best.damageDealt, "hp", 0);
 };
 
-const setGameOverStat = (view, value, best, unit) => {
-  view.children.item(1).innerText = unit ? `${value} ${unit}` : `${value}`;
+const setGameOverStat = (view, value, best, unit, decimals) => {
+  view.children.item(1).innerText = unit ? `${value.toFixed(decimals)} ${unit}` : `${value.toFixed(decimals)}`;
   view.children.item(2).classList.remove("new-best");
   view.children.item(2).classList.remove("previous-best");
+  console.log("Value: ", typeof value, value, "Best:", typeof best, best);
   if (value > best) {
     view.children.item(2).classList.add("new-best");
     view.children.item(2).innerText = "New best!";
   } else {
     view.children.item(2).classList.add("previous-best");
-    view.children.item(2).innerText = `( Best: ${unit ? `${best} ${unit}` : best} )`;
+    view.children.item(2).innerText = `( Best: ${
+      unit ? `${best.toFixed(decimals)} ${unit}` : best.toFixed(decimals)
+    } )`;
   }
 };
 

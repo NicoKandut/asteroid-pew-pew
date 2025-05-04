@@ -1,4 +1,10 @@
-import { checkAndResolveCollision, checkCollision, createPhysicsEntity, velocityVerlet } from "./features/RigidBody.js";
+import {
+  applyForce,
+  checkAndResolveCollision,
+  checkCollision,
+  createPhysicsEntity,
+  velocityVerlet,
+} from "./features/RigidBody.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
 import { randomAngularVelocity, randomPositionOnEdge, randomAsteroidSize, randomPosition } from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
@@ -231,6 +237,10 @@ const processEvents = (deltaTime) => {
     bulletPosition.x += spaceship.position.x;
     bulletPosition.y += spaceship.position.y;
     addBullet(bulletPosition, rotation, angleToUnitVector(rotation), 0);
+    const force = angleToUnitVector(rotation + Math.PI);
+    force.x *= 0.01;
+    force.y *= 0.01;
+    applyForce(spaceship, force, 0.0);
     playBulletShootSound();
     bulletIndex++;
     lastBulletTime = now;
