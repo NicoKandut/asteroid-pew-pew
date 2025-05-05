@@ -613,8 +613,11 @@ const startGame = () => {
 };
 
 const endGame = () => {
-  cancelAnimationFrame(frameHandle);
+  if (paused) {
+    return;
+  }
   paused = true;
+  cancelAnimationFrame(frameHandle);
   setPropulsionVolume(0);
   spaceship = null;
 
