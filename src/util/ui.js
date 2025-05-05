@@ -1,7 +1,6 @@
 import * as renderer from "../renderer/2d.js";
-import { setVolumeModifier, playClickSound, playSubmitSound } from "./sound.js";
+import { playClickSound, playSubmitSound } from "./sound.js";
 
-let canvas = document.getElementsByTagName("canvas")[0];
 let entityCountView = document.getElementById("entity-count");
 let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
@@ -16,6 +15,8 @@ const debugDrawTrajectory = document.getElementById("debug-trajectory");
 const debugSplinePaths = document.getElementById("debug-spline-paths");
 const debugRocketSpeed = document.getElementById("debug-rocket-speed");
 const fireRateView = document.getElementById("fire-rate");
+const rocketPiercingView = document.getElementById("rocket-piercing");
+const bulletDamageView = document.getElementById("bullet-damage");
 const hpView = document.getElementById("hp");
 const gameOverView = document.getElementById("game-over");
 const timePlayedView = document.getElementById("time-played");
@@ -30,6 +31,10 @@ const modeStationaryView = document.getElementById("mode-stationary");
 const markPacifistView = document.getElementById("mark-pacifist");
 const markStationaryView = document.getElementById("mark-stationary");
 const backToMainMenuButton = document.getElementById("back-to-main-menu");
+const pauseBackToMainMenuButton = document.getElementById("pause-back-to-main-menu");
+const controlsMoveView = document.getElementById("controls-move");
+const controlsBulletView = document.getElementById("controls-bullet");
+const controlsRocketView = document.getElementById("controls-rocket");
 
 export const init = (
   start,
@@ -57,10 +62,22 @@ export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled
   modePacifistView.addEventListener("change", (event) => {
     playClickSound();
     setWeaponsEnabled(!event.target.checked);
+    if (event.target.checked) {
+      controlsBulletView.setAttribute("disabled", "true");
+      controlsRocketView.setAttribute("disabled", "true");
+    } else {
+      controlsBulletView.removeAttribute("disabled");
+      controlsRocketView.removeAttribute("disabled");
+    }
   });
   modeStationaryView.addEventListener("change", (event) => {
     playClickSound();
     setMovementEnabled(!event.target.checked);
+    if (event.target.checked) {
+      controlsMoveView.setAttribute("disabled", "true");
+    } else {
+      controlsMoveView.removeAttribute("disabled");
+    }
   });
 };
 
@@ -112,6 +129,11 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
     hidePauseMenu();
     resume();
   });
+  pauseBackToMainMenuButton.addEventListener("click", () => {
+    playSubmitSound();
+    hidePauseMenu();
+    showMainMenu();
+  });
 };
 
 export const showPauseMenu = () => {
@@ -148,14 +170,14 @@ export const updateGameOverMenu = (weaponsEnabled, movementEnabled, current, bes
   markPacifistView.style.display = weaponsEnabled ? "none" : "block";
   markStationaryView.style.display = movementEnabled ? "none" : "block";
 
-  setGameOverStat(timePlayedView, (current.timePlayed / 1000).toFixed(1), (best.timePlayed / 1000).toFixed(1), "s");
+  setGameOverStat(timePlayedView, current.timePlayed / 1000, best.timePlayed / 1000, "s", 1);
   setGameOverStat(asteroidsDestroyedView, current.asteroidsDestroyed, best.asteroidsDestroyed);
-  setGameOverStat(distanceTraveledView, current.distanceTraveled.toFixed(1), best.distanceTraveled.toFixed(1), "m");
-  setGameOverStat(damageDealtView, current.damageDealt, best.damageDealt, "hp");
+  setGameOverStat(distanceTraveledView, current.distanceTraveled, best.distanceTraveled, "m", 1);
+  setGameOverStat(damageDealtView, current.damageDealt, best.damageDealt, "hp", 0);
 };
 
-const setGameOverStat = (view, value, best, unit) => {
-  view.children.item(1).innerText = unit ? `${value} ${unit}` : `${value}`;
+const setGameOverStat = (view, value, best, unit, decimals) => {
+  view.children.item(1).innerText = unit ? `${value.toFixed(decimals)} ${unit}` : `${value.toFixed(decimals)}`;
   view.children.item(2).classList.remove("new-best");
   view.children.item(2).classList.remove("previous-best");
   if (value > best) {
@@ -163,12 +185,22 @@ const setGameOverStat = (view, value, best, unit) => {
     view.children.item(2).innerText = "New best!";
   } else {
     view.children.item(2).classList.add("previous-best");
-    view.children.item(2).innerText = `( Best: ${unit ? `${best} ${unit}` : best} )`;
+    view.children.item(2).innerText = `( Best: ${
+      unit ? `${best.toFixed(decimals)} ${unit}` : best.toFixed(decimals)
+    } )`;
   }
 };
 
 export const updateFireRate = (bulletCooldown) => {
-  fireRateView.innerText = `${Math.round(1000 / bulletCooldown)} shots/s`;
+  fireRateView.innerText = `${Math.round(1000 / bulletCooldown)}`;
+};
+
+export const updateRocketPiercing = (piercing) => {
+  rocketPiercingView.innerText = `${piercing}`;
+};
+
+export const updateBulletDamage = (damage) => {
+  bulletDamageView.innerText = damage.toFixed(1); 
 };
 
 export const updateHp = (hp) => {
