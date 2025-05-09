@@ -1,4 +1,3 @@
-import { normalize } from "../util/linalg.js";
 import * as renderer from "../renderer/2d.js";
 
 export const createPhysicsEntity = () => {
@@ -62,10 +61,6 @@ export const checkCollision = (a, b) => {
 };
 
 export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
-  if (a.frozen || b.frozen) {
-    return false;
-  }
-
   const distance = distanceBetween(a, b);
   if (distance >= a.radius + b.radius) {
     return false;
@@ -87,10 +82,14 @@ export const checkAndResolveCollision = (a, b, elasticity, subOverlap) => {
     b.position.y += normal.y * overlap;
   }
 
-  a.velocity.x -= momentum * elasticity * b.mass * normal.x;
-  a.velocity.y -= momentum * elasticity * b.mass * normal.y;
-  b.velocity.x += momentum * elasticity * a.mass * normal.x;
-  b.velocity.y += momentum * elasticity * a.mass * normal.y;
+  if (!a.frozen) {
+    a.velocity.x -= momentum * elasticity * b.mass * normal.x;
+    a.velocity.y -= momentum * elasticity * b.mass * normal.y;
+  }
+  if (!b.frozen) {
+    b.velocity.x += momentum * elasticity * a.mass * normal.x;
+    b.velocity.y += momentum * elasticity * a.mass * normal.y;
+  }
 
   const flash = {
     position: {

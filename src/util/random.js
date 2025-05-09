@@ -35,7 +35,35 @@ export const randomAngularVelocity = (scale) => {
   return (Math.random() * 2 - 1) * scale;
 };
 
-export const randomAsteroidSize = () => {
+export const randomAsteroidSize = (timePlayed) => {
   const sizes = [20, 30, 40];
+  if (timePlayed > 30000) {
+    sizes.shift();
+    sizes.push(50);
+  }
+  if (timePlayed > 60000) {
+    sizes.shift();
+    sizes.push(60);
+  }
+  if (timePlayed > 90000) {
+    sizes.shift();
+    sizes.push(80);
+  }
+  if (timePlayed > 120000) {
+    sizes.shift();
+    sizes.push(100);
+  }
   return sizes[Math.floor(Math.random() * sizes.length)];
 };
+
+export const randomPowerupType = () => {
+  const types = ["health", "damage", "rocket-piercing"];
+  const probabilities = [0.6, 0.9, 1.0];
+  const randomValue = Math.random();
+  for (let i = 0; i < types.length; i++) {
+    if (randomValue < probabilities[i]) {
+      return types[i];
+    }
+  }
+  return types[types.length - 1];
+}

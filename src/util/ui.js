@@ -204,12 +204,8 @@ export const updateBulletDamage = (damage) => {
 };
 
 export const updateHp = (hp) => {
-  if (hp == 5) {
-    for (let heart of hpView.children) {
-      heart.style.color = "red";
-    }
-  } else {
-    hpView.children.item(hp).style.color = "grey";
+  for (let i = 0; i < hpView.children.length; i++) {
+    hpView.children.item(i).style.color = i < hp ? "red" : "grey";
   }
 };
 

@@ -6,7 +6,7 @@ import {
   velocityVerlet,
 } from "./features/RigidBody.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
-import { randomAngularVelocity, randomPositionOnEdge, randomAsteroidSize, randomPosition } from "./util/random.js";
+import { randomAngularVelocity, randomPositionOnEdge, randomAsteroidSize, randomPosition, randomPowerupType } from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
 import { angleToUnitVector, scale } from "./util/linalg.js";
 import { gameState, getBest, resetGameState, trackScore } from "./util/gamestatistics.js";
@@ -16,6 +16,7 @@ import {
   playBulletHitSound,
   playBulletShootSound,
   playExplosionSound,
+  playPowerupSound,
   playSpaceshipCollisionSound,
   setPropulsionVolume,
   setVolumeModifier,
@@ -66,6 +67,7 @@ let asteroids = [];
 let bullets = [];
 let rockets = [];
 let spaceship = null;
+let powerups = [];
 
 // shooting
 let bulletDamage = 1;
@@ -86,6 +88,10 @@ const setRocketSpeed = (value) => (rocketVelocity = value);
 let asteroidCooldown = 1000;
 let lastAsteroidTime = 0;
 const computeAsteroidCooldown = (elapsed) => Math.pow(0.99, elapsed / 1000) * 1000;
+
+// powerups
+let powerupCooldown = 10000;
+let lastPowerupTime = 0;
 
 let movement = {
   forward: false,
@@ -235,7 +241,7 @@ const doFrame = () => {
   frameHandle = requestAnimationFrame(doFrame);
 };
 
-const processEvents = (deltaTime) => {
+const processEvents = () => {
   // bullets
   if (shootingBullets && now - lastBulletTime >= bulletCooldown && spaceship) {
     const rotation = spaceship.rotation + (Math.random() - 0.5) * 0.1;
@@ -246,16 +252,16 @@ const processEvents = (deltaTime) => {
     bulletPosition.x += spaceship.position.x;
     bulletPosition.y += spaceship.position.y;
     addBullet(bulletPosition, rotation, angleToUnitVector(rotation), 0);
-    const force = angleToUnitVector(rotation + Math.PI);
-    force.x *= 0.01;
-    force.y *= 0.01;
-    applyForce(spaceship, force, 0.0);
+    // const force = angleToUnitVector(rotation + Math.PI);
+    // force.x *= 0.01;
+    // force.y *= 0.01;
+    // applyForce(spaceship, force, 0.0);
     playBulletShootSound();
     bulletIndex++;
     lastBulletTime = now;
   }
 
-  // bullets
+  // rockets
   if (shootingRockets && now - lastRocketTime >= rocketCooldown && spaceship) {
     const targets = [
       {
@@ -296,6 +302,7 @@ const processEvents = (deltaTime) => {
     lastRocketTime = now;
   }
 
+  // spawn new asteroids
   if (now - lastAsteroidTime >= asteroidCooldown) {
     const position = randomPositionOnEdge();
     const target = randomPosition();
@@ -311,11 +318,35 @@ const processEvents = (deltaTime) => {
     }
     velocity.x *= Math.random() * 0.1 + 0.1;
     velocity.y *= Math.random() * 0.1 + 0.1;
-    const angularVelocity = randomAngularVelocity(0.01);
-    const radius = randomAsteroidSize();
+    const angularVelocity = randomAngularVelocity(0.005);
+    const radius = randomAsteroidSize(gameState.timePlayed);
     addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius);
     lastAsteroidTime = now;
     asteroidCooldown = computeAsteroidCooldown(gameState.timePlayed);
+  }
+
+  // powerups
+  if (now - lastPowerupTime >= powerupCooldown) {
+    const position = randomPositionOnEdge();
+    const target = {
+      x: canvas.width / 2 + (Math.random() - 0.5) * 400,
+      y: canvas.height / 2 + (Math.random() - 0.5) * 400,
+    }
+    const velocity = {
+      x: target.x - position.x,
+      y: target.y - position.y,
+    };
+    const length = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
+    if (length > 0) {
+      velocity.x /= length;
+      velocity.y /= length;
+    }
+    velocity.x *= 0.1;
+    velocity.y *= 0.1;
+    const angularVelocity = randomAngularVelocity(0.005);
+    const powerupType = randomPowerupType();
+    addPowerup(powerupType, position, 0, velocity, angularVelocity);
+    lastPowerupTime = now;
   }
 
   // movement
@@ -346,7 +377,7 @@ const outOfBounds = (position) => {
 };
 
 const update = (deltaTime) => {
-  processEvents(deltaTime);
+  processEvents();
 
   gameState.timePlayed += deltaTime;
 
@@ -394,6 +425,32 @@ const update = (deltaTime) => {
       gameState.damageDealt += target.hp;
       playExplosionSound();
     });
+  }
+
+  for (const powerup of powerups) {
+    velocityVerlet(powerup, deltaTime);
+    if (outOfBounds(powerup.position)) {
+      powerup.remove = true;
+    }
+    if (checkCollision(powerup, spaceship)) {
+      powerup.remove = true;
+      playPowerupSound();
+      switch (powerup.type) {
+        case "health":
+          spaceship.hp += 1;
+          spaceship.hp = Math.min(spaceship.hp, 5);
+          ui.updateHp(spaceship.hp);
+          break;
+        case "damage":
+          bulletDamage += 1;
+          ui.updateBulletDamage(bulletDamage);
+          break;
+        case "rocket-piercing":
+          rocketPiercing += 1;
+          ui.updateRocketPiercing(rocketPiercing);
+          break;
+      }
+    }
   }
 
   const previousPosition = { ...spaceship.position };
@@ -471,9 +528,16 @@ const cleanUpEntities = () => {
     }
   });
 
+  powerups.forEach((powerup) => {
+    if (powerup.remove) {
+      renderer.removeEntity(renderer.POWERUP, powerup.id);
+    }
+  });
+
   asteroids = asteroids.filter((asteroid) => !asteroid.remove);
   bullets = bullets.filter((bullet) => !bullet.remove);
   rockets = rockets.filter((rocket) => !rocket.remove);
+  powerups = powerups.filter((powerup) => !powerup.remove);
 };
 
 const imgAsteroid = new Image();
@@ -594,6 +658,19 @@ const addFlames = (position, rotation, parent) => {
   parent.children.push(flame);
 
   renderer.addEntity(renderer.FLAMES, flame);
+};
+
+const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
+  const powerup = createPhysicsEntity();
+  powerup.type = type;
+  powerup.position = position;
+  powerup.rotation = rotation;
+  powerup.velocity = velocity;
+  powerup.angularVelocity = angularVelocity;
+  powerup.radius = 25;
+
+  renderer.addEntity(renderer.POWERUP, powerup);
+  powerups.push(powerup);
 };
 
 const togglePause = () => {

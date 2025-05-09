@@ -14,6 +14,9 @@ import boomUrl11 from "/img/boom/boom_11.gif?url";
 import boomUrl12 from "/img/boom/boom_12.gif?url";
 import boomUrl13 from "/img/boom/boom_13.gif?url";
 import boomUrl14 from "/img/boom/boom_14.gif?url";
+// https://pixabay.com/vectors/ice-block-cube-frozen-cold-34075/
+import iceUrl from "/img/ice.png?url";
+import powerupUrl from "/img/powerup.png?url";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -28,6 +31,7 @@ export const SPACESHIP = "spaceship";
 export const VELOCITY = "velocity";
 export const SPACESHIPPART = "spaceshippart";
 export const FLAMES = "flames";
+export const POWERUP = "powerup";
 
 // COLORS
 const WHITE = "#ffffff";
@@ -77,6 +81,7 @@ const entities = {
   [ROCKET]: {},
   [EXPLOSION]: {},
   [FLASH]: {},
+  [POWERUP]: {},
 };
 
 let velocityDrawing = false;
@@ -137,6 +142,9 @@ boomFrames[12].src = boomUrl12;
 boomFrames[13].src = boomUrl13;
 boomFrames[14].src = boomUrl14;
 
+const iceImage = new Image();
+iceImage.src = iceUrl;
+
 // DRAWING
 export const render = () => {
   // resize
@@ -173,6 +181,9 @@ export const render = () => {
           break;
         case FLASH:
           drawFlash(entity);
+          break;
+        case POWERUP:
+          drawPowerup(entity);
           break;
       }
 
@@ -222,6 +233,12 @@ const drawCircular = (entity) => {
     context.arc(0, 0, radius, 0, 2 * Math.PI);
 
     context.stroke();
+  }
+
+  if (entity.frozen) {
+    context.globalAlpha = 0.2;
+    context.drawImage(iceImage, -radius - 10, -radius - 10, radius * 2 + 20, radius * 2 + 20);
+    context.globalAlpha = 1;
   }
 
   context.restore();
@@ -376,7 +393,7 @@ const drawFlash = (entity) => {
   context.moveTo(innerRadius, innerRadius);
   context.lineTo(outerRadius, 0);
   context.lineTo(innerRadius, -innerRadius);
-  context.lineTo(0, - outerRadius);
+  context.lineTo(0, -outerRadius);
   context.lineTo(-innerRadius, -innerRadius);
   context.lineTo(-outerRadius, 0);
   context.lineTo(-innerRadius, innerRadius);
@@ -384,5 +401,44 @@ const drawFlash = (entity) => {
   context.resetTransform();
   context.closePath();
   context.fill();
-  
+};
+
+const powerupImage = new Image();
+powerupImage.src = powerupUrl;
+const drawPowerup = (entity) => {
+  const { radius } = entity;
+  const size = radius * 2;
+  context.save();
+  context.translate(entity.position.x, entity.position.y);
+  context.rotate(entity.rotation);
+
+  context.drawImage(powerupImage, -radius, -radius, size, size);
+
+  if (hitboxDrawing) {
+    context.strokeStyle = "lime";
+    context.lineWidth = 1;
+    context.strokeRect(-radius, -radius, size, size);
+  }
+
+  switch (entity.type) {
+    case "health":
+      context.textAlign = "center";
+      context.font = "20px Arial";
+      context.fillText("💚", 0, 7);
+      break;
+    case "damage":
+      context.fillStyle = "yellow";
+      context.textAlign = "center";
+      context.font = "20px Arial";
+      context.fillText("=", 0, 7);
+      break;
+    case "rocket-piercing":
+      context.fillStyle = "blue";
+      context.textAlign = "center";
+      context.font = "20px Arial";
+      context.fillText("🚀", 0, 7);
+      break;
+  }
+
+  context.restore();
 };

@@ -1,11 +1,11 @@
 import propulsionUrl from "/audio/propulsion.mp3?url";
-import bonkUrl from "/audio/bonk.mp3?url";
 import explosionUrl from "/audio/explosion.wav?url";
 import laserUrl from "/audio/shoot.wav?url";
 import hurtUrl from "/audio/hurt.wav?url";
 import hitUrl from "/audio/hit.wav?url";
 import clickUrl from "/audio/click.wav?url";
 import submitUrl from "/audio/submit.wav?url";
+import powerupUrl from "/audio/powerup.wav?url";
 import backgroundMusicUrl from "/audio/CODEX_2015.mp3?url";
 
 let volumeModifier = 0.5;
@@ -65,6 +65,12 @@ export const playExplosionSound = () => {
   audio.volume = 0.3 * volumeModifier;
   audio.play().catch(() => {});
 };
+
+export const playPowerupSound = () => {
+  const audio = new Audio(powerupUrl);
+  audio.volume = 0.2 * volumeModifier;
+  audio.play().catch(() => {});
+}
 
 const backgroundMusic = new Audio(backgroundMusicUrl);
 backgroundMusic.volume = 0.05 * volumeModifier;
