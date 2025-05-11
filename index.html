@@ -11,8 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Asteroid Pew Pew</title>
     <link rel="icon" type="image/png" href="/asteroid-pew-pew/favicon.png" sizes="90x90" />
-    <script type="module" crossorigin src="/asteroid-pew-pew/assets/index-ithNcTky.js"></script>
-    <link rel="stylesheet" crossorigin href="/asteroid-pew-pew/assets/index-CGK6XC6z.css">
+    <script type="module" crossorigin src="/asteroid-pew-pew/assets/index-BWlqltDf.js"></script>
+    <link rel="stylesheet" crossorigin href="/asteroid-pew-pew/assets/index-Cn2cwXI-.css">
   </head>
 
   <body>
@@ -49,7 +49,7 @@
         </div>
       </section>
       <section id="main-menu" class="menu">
-        <h1>Asteroid Pew Pew</h1>
+        <h1>Asteroid Pew Pew<small id="version">0.0.0</small></h1>
         <button id="start" class="positive">Play</button>
         <label for="mode-pacifist">
           <span>☮️ Pacifist</span>
@@ -58,6 +58,10 @@
         <label for="mode-stationary">
           <span>⚓ Stationary</span>
           <input type="checkbox" id="mode-stationary" />
+        </label>
+        <label for="mode-extreme">
+          <span>👿 Extreme</span>
+          <input type="checkbox" id="mode-extreme" />
         </label>
       </section>
       <section id="pause-menu" class="menu">
@@ -106,6 +110,7 @@
           <span>Game Over</span>
           <span id="mark-pacifist">☮️</span>
           <span id="mark-stationary">⚓</span>
+          <span id="mark-extreme">👿</span>
         </h1>
         <p id="time-played" class="game-over-stat">
           <span>Time Played:</span>
