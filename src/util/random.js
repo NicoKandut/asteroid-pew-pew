@@ -13,12 +13,12 @@ export const randomPositionOnEdge = () => {
 
   switch (edge) {
     case 0: // Top edge
-      return { x: Math.random() * canvas.width, y: - padding };
+      return { x: Math.random() * canvas.width, y: -padding };
     case 1: // Right edge
       return { x: canvas.width + padding, y: Math.random() * canvas.height };
     case 2: // Bottom edge
       return { x: Math.random() * canvas.width, y: canvas.height + padding };
-    case 3: // Left edge  
+    case 3: // Left edge
       return { x: -padding, y: Math.random() * canvas.height };
   }
 };
@@ -66,4 +66,28 @@ export const randomPowerupType = () => {
     }
   }
   return types[types.length - 1];
-}
+};
+
+export const randomRangeWithProbability = (values, probabilities) => {
+  const randomValue = Math.random();
+  let cumulativeProbability = 0;
+  for (let i = 0; i < probabilities.length; i++) {
+    cumulativeProbability += probabilities[i];
+    if (randomValue < cumulativeProbability) {
+      return values[i];
+    }
+  }
+  return values[probabilities.length - 1];
+};
+
+export const randomAsteroidType = () => {
+  const types = ["default", "homing", "armored", "turret"];
+  const probabilities = [0.85, 0.05, 0.05, 0.05];
+  return randomRangeWithProbability(types, probabilities);
+};
+
+export const randomAsteroidTypeExtreme = () => {
+  const types = ["homing", "armored", "turret"];
+  const probabilities = [0.34, 0.33, 0.33];
+  return randomRangeWithProbability(types, probabilities);
+};

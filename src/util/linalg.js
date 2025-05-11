@@ -36,6 +36,11 @@ export const angleToUnitVector = (angle) => ({
   y: Math.sin(angle),
 })
 
+export const angleOfVector = (vector) => {
+  const angle = Math.atan2(vector.y, vector.x);
+  return angle < 0 ? angle + Math.PI * 2 : angle;
+}
+
 export const length = (vector) => {
   return Math.sqrt(vector.x ** 2 + vector.y ** 2);
 }

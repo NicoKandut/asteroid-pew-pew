@@ -193,6 +193,10 @@ kbd {
   }
 }
 
+#version {
+  color: var(--accent);
+}
+
 #stats {
   display: flex;
   flex-direction: column;

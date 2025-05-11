@@ -28,8 +28,10 @@ const restartButton = document.getElementById("restart");
 const volumeSlider = document.getElementById("volume");
 const modePacifistView = document.getElementById("mode-pacifist");
 const modeStationaryView = document.getElementById("mode-stationary");
+const modeExtremeView = document.getElementById("mode-extreme");
 const markPacifistView = document.getElementById("mark-pacifist");
 const markStationaryView = document.getElementById("mark-stationary");
+const markExtremeView = document.getElementById("mark-extreme");
 const backToMainMenuButton = document.getElementById("back-to-main-menu");
 const pauseBackToMainMenuButton = document.getElementById("pause-back-to-main-menu");
 const controlsMoveView = document.getElementById("controls-move");
@@ -45,14 +47,15 @@ export const init = (
   setDesiredDeltaTime,
   setRocketSpeed,
   resume,
-  reset
+  reset,
+  setExtremeModeEnabled
 ) => {
-  initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled);
+  initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled);
   initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume);
   initGameOverMenu(start, reset);
 };
 
-export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled) => {
+export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled) => {
   startButton.addEventListener("click", () => {
     playSubmitSound();
     hideMainMenu();
@@ -78,6 +81,10 @@ export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled
     } else {
       controlsMoveView.removeAttribute("disabled");
     }
+  });
+  modeExtremeView.addEventListener("change", (event) => {
+    playClickSound();
+    setExtremeModeEnabled(event.target.checked);
   });
 };
 

@@ -248,8 +248,8 @@ const drawBullet = (entity) => {
   const { length } = renderDetails[BULLET];
   const c = (Math.cos(entity.rotation) * length) / 2;
   const s = (Math.sin(entity.rotation) * length) / 2;
-  context.fillStyle = renderDetails[BULLET].color;
-  context.strokeStyle = renderDetails[BULLET].color;
+  context.fillStyle = entity.friendly ? renderDetails[BULLET].color : "red";
+  context.strokeStyle = entity.friendly ? renderDetails[BULLET].color : "red";
   context.lineWidth = renderDetails[BULLET]?.strokeWidth ?? 0;
   context.beginPath();
   context.moveTo(entity.position.x + c, entity.position.y + s);

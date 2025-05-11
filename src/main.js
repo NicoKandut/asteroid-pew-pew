@@ -6,11 +6,20 @@ import {
   velocityVerlet,
 } from "./features/RigidBody.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
-import { randomAngularVelocity, randomPositionOnEdge, randomAsteroidSize, randomPosition, randomPowerupType } from "./util/random.js";
+import {
+  randomAngularVelocity,
+  randomPositionOnEdge,
+  randomAsteroidSize,
+  randomPosition,
+  randomPowerupType,
+  randomAsteroidType,
+  randomAsteroidTypeExtreme,
+} from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
-import { angleToUnitVector, scale } from "./util/linalg.js";
+import { angleOfVector, angleToUnitVector, scale } from "./util/linalg.js";
 import { gameState, getBest, resetGameState, trackScore } from "./util/gamestatistics.js";
 import {
+  playArmorHitSound,
   playAsteroidCollisionSound,
   playBackgroundMusic,
   playBulletHitSound,
@@ -22,6 +31,9 @@ import {
   setVolumeModifier,
 } from "./util/sound.js";
 import asteroid1Url from "/img/Asteroid1.png?url";
+import asteroidRedUrl from "/img/asteroid_red.png?url";
+import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
+import asteroidGreenUrl from "/img/asteroid_green.png?url";
 import spaceshipUrl from "/img/Spaceship.png?url";
 import wingLeftUrl from "/img/WingLeft.png?url";
 import wingRightUrl from "/img/WingRight.png?url";
@@ -34,8 +46,8 @@ let controllerIndex = null;
 
 const BULLET_MASS = 2000;
 
-const calculateAsteroidMass = (radius) => {
-  const density = 3.5;
+const calculateAsteroidMass = (radius, type) => {
+  const density = type === "armored" ? 10 : 3.5;
   return (4 / 3) * Math.PI * radius ** 3 * density;
 };
 
@@ -78,6 +90,7 @@ let bulletIndex = 0;
 let shootingBullets = false;
 let lastBulletTime = 0;
 let bulletCooldown = 40; // in ms
+let enemyBulletCooldown = 80; // in ms
 
 // rockets
 let rocketPiercing = 3;
@@ -91,6 +104,9 @@ const setRocketSpeed = (value) => (rocketVelocity = value);
 let asteroidCooldown = 1000;
 let lastAsteroidTime = 0;
 const computeAsteroidCooldown = (elapsed) => Math.pow(0.99, elapsed / 1000) * 1000;
+
+let extremeModeEnabled = false;
+const setExtremeModeEnabled = (enabled) => (extremeModeEnabled = enabled);
 
 // powerups
 let powerupCooldown = 10000;
@@ -108,6 +124,7 @@ let movement = {
 };
 
 const main = () => {
+  document.getElementById("version").innerText = `${__APP_VERSION__}`;
   lastFrameTime = performance.now();
   lastSummaryTime = lastFrameTime;
 
@@ -121,7 +138,8 @@ const main = () => {
     setDesiredDeltaTime,
     setRocketSpeed,
     resume,
-    resetGame
+    resetGame,
+    setExtremeModeEnabled
   );
 
   // playBackgroundMusic();
@@ -284,6 +302,13 @@ const initInput = () => {
     const dy = y - spaceship.position.y;
     spaceship.rotation = Math.atan2(dy, dx);
   });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      paused = true;
+      ui.showPauseMenu();
+    }
+  });
 };
 
 let now = performance.now();
@@ -341,7 +366,7 @@ const processEvents = () => {
     bulletPosition.y *= 10;
     bulletPosition.x += spaceship.position.x;
     bulletPosition.y += spaceship.position.y;
-    addBullet(bulletPosition, rotation, angleToUnitVector(rotation), 0);
+    addBullet(bulletPosition, rotation, angleToUnitVector(rotation), 0, true);
     // const force = angleToUnitVector(rotation + Math.PI);
     // force.x *= 0.01;
     // force.y *= 0.01;
@@ -408,9 +433,14 @@ const processEvents = () => {
     }
     velocity.x *= Math.random() * 0.1 + 0.1;
     velocity.y *= Math.random() * 0.1 + 0.1;
+    if (extremeModeEnabled) {
+      velocity.x *= 2;
+      velocity.y *= 2;
+    }
     const angularVelocity = randomAngularVelocity(0.005);
     const radius = randomAsteroidSize(gameState.timePlayed);
-    addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius);
+    const asteroidType = extremeModeEnabled ? randomAsteroidTypeExtreme() : randomAsteroidType();
+    addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType);
     lastAsteroidTime = now;
     asteroidCooldown = computeAsteroidCooldown(gameState.timePlayed);
   }
@@ -421,7 +451,7 @@ const processEvents = () => {
     const target = {
       x: canvas.width / 2 + (Math.random() - 0.5) * 400,
       y: canvas.height / 2 + (Math.random() - 0.5) * 400,
-    }
+    };
     const velocity = {
       x: target.x - position.x,
       y: target.y - position.y,
@@ -481,6 +511,8 @@ const processEvents = () => {
       }
     }
   }
+
+  console.log("force:", spaceship.force.x, spaceship.force.y);
 };
 
 const outOfBounds = (position) => {
@@ -493,12 +525,44 @@ const outOfBounds = (position) => {
   );
 };
 
+const handleDamageTaken = () => {
+  spaceship.hp -= 1;
+  playSpaceshipCollisionSound();
+  if (spaceship.hp >= 0) {
+    ui.updateHp(spaceship.hp);
+  }
+  if (spaceship.hp <= 0) {
+    playExplosionSound();
+    removeSpaceshipFromRenderer();
+    setPropulsionVolume(0);
+    renderer.addEntity(renderer.EXPLOSION, { position: { ...spaceship.position }, frame: 0 });
+    setTimeout(() => {
+      endGame();
+    }, 1000);
+  }
+};
+
 const update = (deltaTime) => {
   processEvents();
 
   gameState.timePlayed += deltaTime;
 
   for (const asteroid of asteroids) {
+    if (asteroid.type === "homing") {
+      const velocityMagnitude = Math.sqrt(asteroid.velocity.x ** 2 + asteroid.velocity.y ** 2);
+      let dx = spaceship.position.x - asteroid.position.x;
+      let dy = spaceship.position.y - asteroid.position.y;
+      const length = Math.sqrt(dx ** 2 + dy ** 2);
+      if (length > 0) {
+        dx /= length;
+        dy /= length;
+      }
+      dx *= velocityMagnitude;
+      dy *= velocityMagnitude;
+      asteroid.velocity.x = dx;
+      asteroid.velocity.y = dy;
+    }
+
     velocityVerlet(asteroid, deltaTime);
     if (outOfBounds(asteroid.position)) {
       asteroid.remove = true;
@@ -511,24 +575,75 @@ const update = (deltaTime) => {
         }
       }
     }
+
+    if (asteroid.type === "turret") {
+      const nextCooldown = asteroid.bulletIndex % 5 === 0 ? enemyBulletCooldown * 50 : enemyBulletCooldown;
+      if (now - asteroid.lastBulletTime >= nextCooldown) {
+        const direction = {
+          x: spaceship.position.x - asteroid.position.x,
+          y: spaceship.position.y - asteroid.position.y,
+        };
+        const length = Math.sqrt(direction.x ** 2 + direction.y ** 2);
+        if (length > 0) {
+          direction.x /= length * 2;
+          direction.y /= length * 2;
+        }
+        const bulletPosition = {
+          x: asteroid.position.x,
+          y: asteroid.position.y,
+        };
+        addBullet(bulletPosition, angleOfVector(direction), direction, 0, false);
+        playBulletShootSound();
+        asteroid.lastBulletTime = now;
+        asteroid.bulletIndex++;
+      }
+    }
   }
 
   for (const bullet of bullets) {
+    void 0;
     velocityVerlet(bullet, deltaTime);
     if (outOfBounds(bullet.position)) {
       bullet.remove = true;
     }
-    for (const asteroid of asteroids) {
-      if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
-        gameState.bulletsHit++;
-        gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
-        asteroid.hp -= bulletDamage;
+    if (bullet.disabled) {
+      continue;
+    }
+    if (bullet.friendly) {
+      for (const asteroid of asteroids) {
+        if (asteroid.type === "armored") {
+          if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
+            gameState.bulletsHit++;
+            bullet.velocity.x *= 0.1;
+            bullet.velocity.y *= 0.1;
+            bullet.angularVelocity = randomAngularVelocity(0.02);
+            bullet.disabled = true;
+            playArmorHitSound();
+            setTimeout(() => {
+              bullet.remove = true;
+            }, 300);
+          }
+        } else {
+          if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
+            gameState.bulletsHit++;
+            gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
+            asteroid.hp -= bulletDamage;
+            if (asteroid.hp <= 0) {
+              ++gameState.asteroidsDestroyed;
+              asteroid.remove = true;
+              playExplosionSound();
+            }
+            bullet.remove = true;
+            playBulletHitSound();
+          }
+        }
+      }
+    } else {
+      if (checkAndResolveCollision(bullet, spaceship, 1, false)) {
+        handleDamageTaken();
         bullet.remove = true;
-        playBulletHitSound();
-        if (asteroid.hp <= 0) {
-          ++gameState.asteroidsDestroyed;
-          asteroid.remove = true;
-          playExplosionSound();
+        if (spaceship.hp <= 0) {
+          break;
         }
       }
     }
@@ -581,19 +696,8 @@ const update = (deltaTime) => {
   setPropulsionVolume(Math.min(distance / 100, 0.05));
   for (const asteroid of asteroids) {
     if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
-      spaceship.hp -= 1;
-      playSpaceshipCollisionSound();
-      if (spaceship.hp >= 0) {
-        ui.updateHp(spaceship.hp);
-      }
+      handleDamageTaken();
       if (spaceship.hp <= 0) {
-        playExplosionSound();
-        removeSpaceshipFromRenderer();
-        setPropulsionVolume(0);
-        renderer.addEntity(renderer.EXPLOSION, { position: { ...spaceship.position }, frame: 0 });
-        setTimeout(() => {
-          endGame();
-        }, 1000);
         break;
       }
     }
@@ -668,18 +772,40 @@ const cleanUpEntities = () => {
 const imgAsteroid = new Image();
 imgAsteroid.src = asteroid1Url;
 
-const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius) => {
+const imgAsteroidRed = new Image();
+imgAsteroidRed.src = asteroidRedUrl;
+
+const imgAsteroidArmored = new Image();
+imgAsteroidArmored.src = asteroidArmoredUrl;
+
+const imgAsteroidGreen = new Image();
+imgAsteroidGreen.src = asteroidGreenUrl;
+
+const asteroidTextures = {
+  default: imgAsteroid,
+  homing: imgAsteroidRed,
+  armored: imgAsteroidArmored,
+  turret: imgAsteroidGreen,
+};
+
+const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type) => {
   const asteroid = createPhysicsEntity();
   asteroid.position = position;
   asteroid.rotation = rotation;
   asteroid.acceleration = acceleration;
   asteroid.velocity = velocity;
   asteroid.angularVelocity = angularVelocity;
-  asteroid.mass = calculateAsteroidMass(radius);
-  asteroid.radius = radius;
+  asteroid.mass = calculateAsteroidMass(radius, type);
+  asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
   asteroid.hp = radius / 2;
-  asteroid.texture = imgAsteroid;
+  asteroid.texture = asteroidTextures[type];
+  asteroid.type = type;
+
+  if (type === "turret") {
+    asteroid.lastBulletTime = now;
+    asteroid.bulletIndex = 0;
+  }
 
   // do not spawn asteroids inside each other
   // do not spawn asteroids on top of other entities
@@ -696,7 +822,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroids.push(asteroid);
 };
 
-const addBullet = (position, rotation, velocity, angularVelocity) => {
+const addBullet = (position, rotation, velocity, angularVelocity, friendly) => {
   const bullet = createPhysicsEntity();
   bullet.position = position;
   bullet.rotation = rotation;
@@ -705,6 +831,7 @@ const addBullet = (position, rotation, velocity, angularVelocity) => {
   bullet.mass = BULLET_MASS;
   bullet.radius = 5;
   bullet.inertia = (2 / 5) * bullet.mass * bullet.radius ** 2;
+  bullet.friendly = friendly;
   renderer.addEntity(renderer.BULLET, bullet);
   bullets.push(bullet);
   ++gameState.bulletsFired;
@@ -857,6 +984,8 @@ const resetGame = () => {
   rockets = [];
   asteroidCooldown = 1000;
 
+  rocketPiercing = 3;
+  bulletDamage = 1;
   ui.updateHp(5);
   ui.hidePauseMenu();
   ui.hideGameOverMenu();
