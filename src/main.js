@@ -30,6 +30,8 @@ import * as ui from "./util/ui.js";
 // DOM elements
 let canvas = document.getElementsByTagName("canvas")[0];
 
+let controllerIndex = null;
+
 const BULLET_MASS = 2000;
 
 const calculateAsteroidMass = (radius) => {
@@ -61,6 +63,7 @@ const setMovementEnabled = (enabled) => (movementEnabled = enabled);
 // statistics
 let updatesLastSecond = 0;
 let framesLastSecond = 0;
+let lastMenueToggle = 0;
 
 // entities
 let asteroids = [];
@@ -98,6 +101,10 @@ let movement = {
   backward: false,
   left: false,
   right: false,
+  forwardController: false,
+  backwardController: false,
+  leftController: false,
+  rightController: false,
 };
 
 const main = () => {
@@ -120,7 +127,88 @@ const main = () => {
   // playBackgroundMusic();
 };
 
+const controllerInput = (now) => {
+  if (controllerIndex == null) {
+    return;
+  }
+  const gamepad = navigator.getGamepads()[controllerIndex];
+
+  /* gamepad.buttons
+    0... A
+    1... B
+    2... X
+    3... Y
+    4... LB
+    5... RB
+    6... LT
+    7... RT
+    8... Menue
+    9... Pause
+    10... Left Stick Press
+    11... Right Stick Press
+    12... Cross Up
+    13... Cross Down
+    14... Cross Left
+    15... Cross Right
+  */
+
+  if (gamepad.buttons[9].value >= 0.5 && now - 300 >= lastMenueToggle) {
+    togglePause();
+    lastMenueToggle = now;
+  }
+  if (gamepad.buttons[7].pressed && gamepad.buttons[7].value >= 0.5) {
+    shootingBullets = !paused && weaponsEnabled;
+  } else {
+    shootingBullets = false;
+  }
+  if (gamepad.buttons[6].pressed && gamepad.buttons[6].value >= 0.5) {
+    shootingRockets = !paused && weaponsEnabled;
+  } else {
+    shootingRockets = false;
+  }
+  if (gamepad.buttons[12].pressed) {
+    movement.forwardController = !paused && movementEnabled;
+  } else {
+    movement.forwardController = false;
+  }
+  if (gamepad.buttons[13].pressed) {
+    movement.backwardController = !paused && movementEnabled;
+  } else {
+    movement.backwardController = false;
+  }
+  if (gamepad.buttons[14].pressed) {
+    movement.leftController = !paused && movementEnabled;
+  } else {
+    movement.leftController = false;
+  }
+  if (gamepad.buttons[15].pressed) {
+    movement.rightController = !paused && movementEnabled;
+  } else {
+    movement.rightController = false
+  }
+
+  /* gamepad.axes
+    0... Left Horizontal
+    1... Left Vertical
+    2... Right Horizontal
+    3... Right Vertical
+  */
+
+  if (Math.abs(gamepad.axes[2]) >= 0.5 || Math.abs(gamepad.axes[3]) >= 0.5) {
+    spaceship.rotation = Math.atan2(gamepad.axes[3], gamepad.axes[2]);
+  }
+}
+
 const initInput = () => {
+  window.addEventListener("gamepadconnected", (event) => {
+    console.log("controller connected")
+    controllerIndex = event.gamepad.index;
+  });
+
+  window.addEventListener("gamepaddisconnected", () => {
+    controllerIndex = null;
+  });
+  
   document.addEventListener("keydown", (event) => {
     switch (event.key) {
       case "Escape":
@@ -202,6 +290,8 @@ let now = performance.now();
 
 const doFrame = () => {
   now = performance.now();
+
+  controllerInput(now);
 
   // updates
   // update at fixed rate to avoid physics issues
@@ -351,17 +441,44 @@ const processEvents = () => {
 
   // movement
   if (spaceship) {
-    if (movement.forward) {
-      spaceship.force.y -= 0.004;
+    if (controllerIndex != null) {
+      const gamepad = navigator.getGamepads()[controllerIndex];
+
+      let yMulti = gamepad.axes[1];
+      if (Math.abs(gamepad.axes[1]) <= 0.01) {
+        yMulti = 0;
+      } else if (gamepad.axes[1] >= 0.7) {
+        yMulti = 1
+      } else if (gamepad.axes[1] <= -0.7) {
+        yMulti = -1
+      }
+      
+      let xMulti = gamepad.axes[0];
+      if (Math.abs(gamepad.axes[0]) <= 0.01) {
+        xMulti = 0;
+      } else if (gamepad.axes[0] >= 0.7) {
+        xMulti = 1
+      } else if (gamepad.axes[0] <= -0.7) {
+        xMulti = -1
+      }  
+
+      spaceship.force.y += 0.004 * yMulti;
+      spaceship.force.x += 0.004 * xMulti;
     }
-    if (movement.backward) {
-      spaceship.force.y += 0.004;
-    }
-    if (movement.left) {
-      spaceship.force.x -= 0.004;
-    }
-    if (movement.right) {
-      spaceship.force.x += 0.004;
+
+    if (spaceship.force.x == 0 && spaceship.force.y == 0) {
+      if (movement.forward || movement.forwardController) {
+        spaceship.force.y -= 0.004;
+      }
+      if (movement.backward || movement.backwardController) {
+        spaceship.force.y += 0.004;
+      }
+      if (movement.left || movement.leftController) {
+        spaceship.force.x -= 0.004;
+      }
+      if (movement.right || movement.rightController) {
+        spaceship.force.x += 0.004;
+      }
     }
   }
 };
@@ -483,9 +600,17 @@ const update = (deltaTime) => {
   }
 
   // automatic brake
-  if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
-    spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
-    spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
+  if (controllerIndex == null) {
+    if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
+      spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
+      spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
+    }
+  } else {
+    const gamepad = navigator.getGamepads()[controllerIndex];
+    if (Math.abs(gamepad.axes[0]) < 0.01 && Math.abs(gamepad.axes[1]) < 0.01 && !movement.forward && !movement.backward && !movement.left && !movement.right && !movement.forwardController && !movement.backwardController && !movement.leftController && !movement.rightController) {
+      spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
+      spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
+    }
   }
 
   if (spaceship.position.x < 0 || spaceship.position.x > canvas.width) {
