@@ -202,7 +202,7 @@ const controllerInput = (now) => {
   if (gamepad.buttons[15].pressed) {
     movement.rightController = !paused && movementEnabled;
   } else {
-    movement.rightController = false
+    movement.rightController = false;
   }
 
   /* gamepad.axes
@@ -215,18 +215,18 @@ const controllerInput = (now) => {
   if (Math.abs(gamepad.axes[2]) >= 0.5 || Math.abs(gamepad.axes[3]) >= 0.5) {
     spaceship.rotation = Math.atan2(gamepad.axes[3], gamepad.axes[2]);
   }
-}
+};
 
 const initInput = () => {
   window.addEventListener("gamepadconnected", (event) => {
-    console.log("controller connected")
+    console.log("controller connected");
     controllerIndex = event.gamepad.index;
   });
 
   window.addEventListener("gamepaddisconnected", () => {
     controllerIndex = null;
   });
-  
+
   document.addEventListener("keydown", (event) => {
     switch (event.key) {
       case "Escape":
@@ -478,19 +478,19 @@ const processEvents = () => {
       if (Math.abs(gamepad.axes[1]) <= 0.01) {
         yMulti = 0;
       } else if (gamepad.axes[1] >= 0.7) {
-        yMulti = 1
+        yMulti = 1;
       } else if (gamepad.axes[1] <= -0.7) {
-        yMulti = -1
+        yMulti = -1;
       }
-      
+
       let xMulti = gamepad.axes[0];
       if (Math.abs(gamepad.axes[0]) <= 0.01) {
         xMulti = 0;
       } else if (gamepad.axes[0] >= 0.7) {
-        xMulti = 1
+        xMulti = 1;
       } else if (gamepad.axes[0] <= -0.7) {
-        xMulti = -1
-      }  
+        xMulti = -1;
+      }
 
       spaceship.force.y += 0.004 * yMulti;
       spaceship.force.x += 0.004 * xMulti;
@@ -711,7 +711,18 @@ const update = (deltaTime) => {
     }
   } else {
     const gamepad = navigator.getGamepads()[controllerIndex];
-    if (Math.abs(gamepad.axes[0]) < 0.01 && Math.abs(gamepad.axes[1]) < 0.01 && !movement.forward && !movement.backward && !movement.left && !movement.right && !movement.forwardController && !movement.backwardController && !movement.leftController && !movement.rightController) {
+    if (
+      Math.abs(gamepad.axes[0]) < 0.01 &&
+      Math.abs(gamepad.axes[1]) < 0.01 &&
+      !movement.forward &&
+      !movement.backward &&
+      !movement.left &&
+      !movement.right &&
+      !movement.forwardController &&
+      !movement.backwardController &&
+      !movement.leftController &&
+      !movement.rightController
+    ) {
       spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
       spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
     }
@@ -970,7 +981,7 @@ const endGame = () => {
 
   const best = getBest(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
 
-  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, gameState, best);
+  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, extremeModeEnabled, gameState, best);
   ui.showGameOverMenu();
 
   trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
