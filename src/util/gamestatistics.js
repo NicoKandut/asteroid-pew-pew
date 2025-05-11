@@ -10,23 +10,18 @@ const DEFAULT = {
 
 const BEST_STRING = JSON.stringify(DEFAULT);
 
-const getScoreName = (isPacifist, isStationary) =>
-  "best" + (isPacifist ? "-pacifist" : "-default") + (isStationary ? "-stationary" : "-default");
+const getScoreName = (isPacifist, isStationary, isExtreme) =>
+  "best" + (isPacifist ? "-pacifist" : "-default") + (isStationary ? "-stationary" : "-default" + (isExtreme ? "-extreme" : "-default"));
 
-export const getBest = (isPacifist, isStationary) => {
-  const bestName = getScoreName(isPacifist, isStationary);
+export const getBest = (isPacifist, isStationary, isExtreme) => {
+  const bestName = getScoreName(isPacifist, isStationary, isExtreme);
   return JSON.parse(localStorage.getItem(bestName) || BEST_STRING);
-};
-
-export const setBest = (isPacifist, isStationary, best) => {
-  const bestName = getScoreName(isPacifist, isStationary);
-  localStorage.setItem(bestName, JSON.stringify(best));
 };
 
 export const gameState = { ...DEFAULT };
 
-export const trackScore = (isPacifist, isStationary) => {
-  const best = getBest(isPacifist, isStationary);
+export const trackScore = (isPacifist, isStationary, isExtreme) => {
+  const best = getBest(isPacifist, isStationary, isExtreme);
   best.timePlayed = Math.max(best.timePlayed, gameState.timePlayed);
   best.asteroidsDestroyed = Math.max(best.asteroidsDestroyed, gameState.asteroidsDestroyed);
   best.damageDealt = Math.max(best.damageDealt, gameState.damageDealt);
@@ -34,7 +29,7 @@ export const trackScore = (isPacifist, isStationary) => {
   best.bulletsHit = Math.max(best.bulletsHit, gameState.bulletsHit);
   best.rocketsFired = Math.max(best.rocketsFired, gameState.rocketsFired);
   best.distanceTraveled = Math.max(best.distanceTraveled, gameState.distanceTraveled);
-  localStorage.setItem(getScoreName(isPacifist, isStationary), JSON.stringify(best));
+  localStorage.setItem(getScoreName(isPacifist, isStationary, isExtreme), JSON.stringify(best));
 };
 
 export const resetGameState = () => {

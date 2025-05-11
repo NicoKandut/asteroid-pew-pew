@@ -968,12 +968,12 @@ const endGame = () => {
   setPropulsionVolume(0);
   spaceship = null;
 
-  const best = getBest(!weaponsEnabled, !movementEnabled);
+  const best = getBest(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
 
   ui.updateGameOverMenu(weaponsEnabled, movementEnabled, gameState, best);
   ui.showGameOverMenu();
 
-  trackScore(!weaponsEnabled, !movementEnabled);
+  trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
 };
 
 const resetGame = () => {
