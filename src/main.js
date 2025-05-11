@@ -219,7 +219,6 @@ const controllerInput = (now) => {
 
 const initInput = () => {
   window.addEventListener("gamepadconnected", (event) => {
-    console.log("controller connected");
     controllerIndex = event.gamepad.index;
   });
 
@@ -511,8 +510,6 @@ const processEvents = () => {
       }
     }
   }
-
-  console.log("force:", spaceship.force.x, spaceship.force.y);
 };
 
 const outOfBounds = (position) => {
@@ -576,7 +573,7 @@ const update = (deltaTime) => {
       }
     }
 
-    if (asteroid.type === "turret") {
+    if (asteroid.type === "turret" && !asteroid.frozen) {
       const nextCooldown = asteroid.bulletIndex % 5 === 0 ? enemyBulletCooldown * 50 : enemyBulletCooldown;
       if (now - asteroid.lastBulletTime >= nextCooldown) {
         const direction = {

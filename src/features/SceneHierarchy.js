@@ -3,7 +3,6 @@ let trajectoryHistory = new Map();
 const TRAIL_DURATION = 2000;
 
 export const calcTransform = (entity) => {
-  // console.log(entity);
   const offset = { x: entity.position.x, y: entity.position.y, rotation: entity.rotation };
   const parent = entity.parent;
 

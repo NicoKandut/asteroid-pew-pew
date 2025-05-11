@@ -11,7 +11,10 @@ const DEFAULT = {
 const BEST_STRING = JSON.stringify(DEFAULT);
 
 const getScoreName = (isPacifist, isStationary, isExtreme) =>
-  "best" + (isPacifist ? "-pacifist" : "-default") + (isStationary ? "-stationary" : "-default" + (isExtreme ? "-extreme" : "-default"));
+  "best" +
+  (isPacifist ? "-pacifist" : "-default") +
+  (isStationary ? "-stationary" : "-default") +
+  (isExtreme ? "-extreme" : "-default");
 
 export const getBest = (isPacifist, isStationary, isExtreme) => {
   const bestName = getScoreName(isPacifist, isStationary, isExtreme);
@@ -21,6 +24,7 @@ export const getBest = (isPacifist, isStationary, isExtreme) => {
 export const gameState = { ...DEFAULT };
 
 export const trackScore = (isPacifist, isStationary, isExtreme) => {
+  debugger;
   const best = getBest(isPacifist, isStationary, isExtreme);
   best.timePlayed = Math.max(best.timePlayed, gameState.timePlayed);
   best.asteroidsDestroyed = Math.max(best.asteroidsDestroyed, gameState.asteroidsDestroyed);
