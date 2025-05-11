@@ -548,7 +548,7 @@ const update = (deltaTime) => {
     if (asteroid.type === "homing") {
       const current = normalize(asteroid.velocity);
       const target = normalize(sub(spaceship.position, asteroid.position));
-      const direction = normalize(lerp(current, target, 0.003 * deltaTime));
+      const direction = normalize(lerp(current, target, 0.002 * deltaTime));
       const velocityMagnitude = Math.sqrt(asteroid.velocity.x ** 2 + asteroid.velocity.y ** 2);
       let dx = direction.x;
       let dy = direction.y;
