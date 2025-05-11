@@ -20,7 +20,7 @@ export const reflect = (vector, normal) => {
 
 export const add = (a, b) => {
   return { x: a.x + b.x, y: a.y + b.y };
-}
+};
 
 export const sub = (a, b) => {
   return { x: a.x - b.x, y: a.y - b.y };
@@ -29,18 +29,25 @@ export const sub = (a, b) => {
 export const scale = (vector, scalar) => {
   vector.x *= scalar;
   vector.y *= scalar;
-}
+};
+
+export const lerp = (a, b, t) => {
+  return {
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t,
+  };
+};
 
 export const angleToUnitVector = (angle) => ({
   x: Math.cos(angle),
   y: Math.sin(angle),
-})
+});
 
 export const angleOfVector = (vector) => {
   const angle = Math.atan2(vector.y, vector.x);
   return angle < 0 ? angle + Math.PI * 2 : angle;
-}
+};
 
 export const length = (vector) => {
   return Math.sqrt(vector.x ** 2 + vector.y ** 2);
-}
+};

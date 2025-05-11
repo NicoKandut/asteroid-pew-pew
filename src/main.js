@@ -16,7 +16,7 @@ import {
   randomAsteroidTypeExtreme,
 } from "./util/random.js";
 import * as renderer from "./renderer/2d.js";
-import { angleOfVector, angleToUnitVector, scale } from "./util/linalg.js";
+import { angleOfVector, angleToUnitVector, lerp, normalize, scale, sub } from "./util/linalg.js";
 import { gameState, getBest, resetGameState, trackScore } from "./util/gamestatistics.js";
 import {
   playArmorHitSound,
@@ -546,9 +546,12 @@ const update = (deltaTime) => {
 
   for (const asteroid of asteroids) {
     if (asteroid.type === "homing") {
+      const current = normalize(asteroid.velocity);
+      const target = normalize(sub(spaceship.position, asteroid.position));
+      const direction = normalize(lerp(current, target, 0.003 * deltaTime));
       const velocityMagnitude = Math.sqrt(asteroid.velocity.x ** 2 + asteroid.velocity.y ** 2);
-      let dx = spaceship.position.x - asteroid.position.x;
-      let dy = spaceship.position.y - asteroid.position.y;
+      let dx = direction.x;
+      let dy = direction.y;
       const length = Math.sqrt(dx ** 2 + dy ** 2);
       if (length > 0) {
         dx /= length;
