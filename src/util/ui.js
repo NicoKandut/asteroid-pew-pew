@@ -14,6 +14,7 @@ const debugDrawHitboxes = document.getElementById("debug-hitbox");
 const debugDrawTrajectory = document.getElementById("debug-trajectory");
 const debugSplinePaths = document.getElementById("debug-spline-paths");
 const debugRocketSpeed = document.getElementById("debug-rocket-speed");
+const debugVoronoiSeeds = document.getElementById("debug-draw-seeds");
 const fireRateView = document.getElementById("fire-rate");
 const rocketPiercingView = document.getElementById("rocket-piercing");
 const bulletDamageView = document.getElementById("bullet-damage");
@@ -126,6 +127,10 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
     playClickSound();
     renderer.setDrawSplinePaths(event.target.checked);
   });
+  debugVoronoiSeeds.addEventListener("change", (event) => {
+    playClickSound();
+    renderer.setDrawVoronoiSeeds(event.target.checked);
+  })
   debugRocketSpeed.addEventListener("change", (event) => {
     playClickSound();
     event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));

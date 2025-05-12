@@ -19,6 +19,7 @@ export const createPhysicsEntity = () => {
     maxVelocity: 1,
     parent: null,
     texture: null,
+    fractureSeeds: [],
   };
 };
 

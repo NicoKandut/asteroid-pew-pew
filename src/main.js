@@ -39,6 +39,8 @@ import wingLeftUrl from "/img/WingLeft.png?url";
 import wingRightUrl from "/img/WingRight.png?url";
 import * as ui from "./util/ui.js";
 
+import {generateSeedsTowardImpact, calculateImpactPoint} from './features/voronoiFracture.js'
+
 // DOM elements
 let canvas = document.getElementsByTagName("canvas")[0];
 
@@ -623,7 +625,29 @@ const update = (deltaTime) => {
               bullet.remove = true;
             }, 300);
           }
-        } else {
+        }
+        else if (asteroid.type === "split") {
+          if(checkAndResolveCollision(bullet, asteroid, 1, false))
+          {
+            console.log("Test")
+            gameState.bulletsHit++;
+            gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
+            asteroid.hp -= bulletDamage;
+
+            asteroid.fractureSeeds = generateSeedsTowardImpact(calculateImpactPoint(asteroid, bullet), asteroid.radius);
+
+            if (asteroid.hp <= 0) {
+              ++gameState.asteroidsDestroyed;
+              asteroid.remove = true;
+              playExplosionSound();
+            }
+            bullet.remove = true;
+            playBulletHitSound();
+
+            console.log(asteroid.fractureSeeds);
+          }
+        }
+        else {
           if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
@@ -797,6 +821,7 @@ const asteroidTextures = {
   homing: imgAsteroidRed,
   armored: imgAsteroidArmored,
   turret: imgAsteroidGreen,
+  split: imgAsteroid
 };
 
 const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type) => {

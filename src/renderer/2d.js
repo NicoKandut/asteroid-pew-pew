@@ -18,6 +18,8 @@ import boomUrl14 from "/img/boom/boom_14.gif?url";
 import iceUrl from "/img/ice.png?url";
 import powerupUrl from "/img/powerup.png?url";
 
+import {drawSeeds} from '../features/voronoiFracture'
+
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
 
@@ -88,6 +90,7 @@ let velocityDrawing = false;
 let hitboxDrawing = false;
 let trajectoryDrawing = false;
 let drawSplinePaths = false;
+let drawVornoiSeeds = false;
 
 export const setVelocityDrawing = (draw) => {
   velocityDrawing = draw;
@@ -104,6 +107,10 @@ export const setDrawTrajectory = (draw) => {
 export const setDrawSplinePaths = (draw) => {
   drawSplinePaths = draw;
 };
+
+export const setDrawVoronoiSeeds = (draw) => {
+  drawVornoiSeeds = draw;
+}
 
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
@@ -242,6 +249,11 @@ const drawCircular = (entity) => {
   }
 
   context.restore();
+
+  if(drawVornoiSeeds)
+  {
+    drawSeeds(context, entity);
+  }
 };
 
 const drawBullet = (entity) => {
