@@ -1,5 +1,5 @@
 //Settings
-const seedCount = 5;
+const seedCount = 1;
 const bias = 0.7;
 const scale = 10;
 
@@ -60,17 +60,15 @@ export function calculateImpactPoint(a, b) {
 }
 
 export function computeVoronoiField(entity, noiseFn = null) {
-
     const { fractureSeeds, radius } = entity;
     const width = radius * 2;
     const height = radius * 2;
 
+    const cellMap = new Uint8Array(width * height);
+
     const offscreen = document.createElement('canvas');
     offscreen.width = width;
     offscreen.height = height;
-
-    console.log(width);
-    console.log(height);
 
     const ctx = offscreen.getContext('2d');
     const imageData = ctx.getImageData(0, 0, width, height);
@@ -87,9 +85,12 @@ export function computeVoronoiField(entity, noiseFn = null) {
             if (lx * lx + ly * ly > radius * radius) continue;
 
             let minDistSq = Infinity;
-            for (const seed of fractureSeeds) {
-                let dx = lx - seed.x;
-                let dy = ly - seed.y;
+            let closestSeedIndex = -1;
+
+            for (let i = 0; i < fractureSeeds.length; i++) {
+                const seed = fractureSeeds[i];
+                let dx = (x - cx) - seed.x;
+                let dy = (y - cy) - seed.y;
 
                 if (noiseFn) {
                     const n = noiseFn(x, y);
@@ -100,8 +101,11 @@ export function computeVoronoiField(entity, noiseFn = null) {
                 const distSq = dx * dx + dy * dy;
                 if (distSq < minDistSq) {
                     minDistSq = distSq;
+                    closestSeedIndex = i;
                 }
             }
+
+            cellMap[y * width + x] = closestSeedIndex;
 
             const dist = Math.sqrt(minDistSq);
             const norm = Math.min(1, dist / radius);
@@ -116,7 +120,7 @@ export function computeVoronoiField(entity, noiseFn = null) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
-    return offscreen;
+    return cellMap;
 }
 
 function heatmapColor(t) {
@@ -169,4 +173,61 @@ export function generateNoise(entity) {
 
     const noiseFn = (x, y) => noise[y * width + x];
     return noiseFn;
+}
+
+export function createFragementTexture(originalImageData, cellMap, entity) {
+    const fragments = [];
+
+    const width = entity.radius * 2;
+    const height = entity.radius * 2;
+
+    if (cellMap.length !== width * height) {
+        console.error('Cell map size mismatch');
+    }
+
+    for (let i = 0; i < seedCount; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        const fragData = ctx.createImageData(width, height);
+        let fragPixels = fragData.data;
+        const srcPixels = getImageDataFromImage(originalImageData).data;
+
+        for (let p = 0; p < cellMap.length; p++) {
+            if (cellMap[p] !== i) continue;
+
+            const baseIndex = p * 4;
+            fragPixels[baseIndex] = srcPixels[baseIndex];
+            fragPixels[baseIndex + 1] = srcPixels[baseIndex + 1];
+            fragPixels[baseIndex + 2] = srcPixels[baseIndex + 2];
+            fragPixels[baseIndex + 3] = srcPixels[baseIndex + 3];
+        }
+
+        ctx.putImageData(fragData, 0, 0);
+
+        downloadCanvas(canvas, `./fragment_${i}.png`);
+        fragments.push(canvas);
+    }
+
+    return fragments;
+}
+
+function getImageDataFromImage(img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    return ctx.getImageData(0, 0, img.width, img.height);
+}
+
+function downloadCanvas(canvas, filename = 'fragment.png') {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL();
+    link.click();
 }
