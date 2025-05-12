@@ -39,7 +39,7 @@ import wingLeftUrl from "/img/WingLeft.png?url";
 import wingRightUrl from "/img/WingRight.png?url";
 import * as ui from "./util/ui.js";
 
-import {generateSeedsTowardImpact, calculateImpactPoint} from './features/voronoiFracture.js'
+import {generateVoronoiSeeds, calculateImpactPoint, computeVoronoiField, generateNoise} from './features/voronoiFracture.js'
 
 // DOM elements
 let canvas = document.getElementsByTagName("canvas")[0];
@@ -634,7 +634,11 @@ const update = (deltaTime) => {
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
             asteroid.hp -= bulletDamage;
 
-            asteroid.fractureSeeds = generateSeedsTowardImpact(calculateImpactPoint(asteroid, bullet), asteroid.radius);
+            asteroid.fractureSeeds = generateVoronoiSeeds(calculateImpactPoint(asteroid, bullet), asteroid.radius);
+            const noiseFn = generateNoise(asteroid);
+
+            asteroid.texture = computeVoronoiField(asteroid, noiseFn);
+            
 
             if (asteroid.hp <= 0) {
               ++gameState.asteroidsDestroyed;
