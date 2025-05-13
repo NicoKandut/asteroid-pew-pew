@@ -1,5 +1,5 @@
 //Settings
-const seedCount = 1;
+const seedCount = 5;
 const bias = 0.7;
 const scale = 10;
 
@@ -120,7 +120,7 @@ export function computeVoronoiField(entity, noiseFn = null) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
-    return cellMap;
+    return { heatMap: offscreen, cellMap: cellMap };
 }
 
 function heatmapColor(t) {
@@ -175,7 +175,7 @@ export function generateNoise(entity) {
     return noiseFn;
 }
 
-export function createFragementTexture(originalImageData, cellMap, entity) {
+export function createFragementTexture(originalTexture, cellMap, entity) {
     const fragments = [];
 
     const width = entity.radius * 2;
@@ -191,9 +191,12 @@ export function createFragementTexture(originalImageData, cellMap, entity) {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
 
-        const fragData = ctx.createImageData(width, height);
-        let fragPixels = fragData.data;
-        const srcPixels = getImageDataFromImage(originalImageData).data;
+        const fragImage = ctx.createImageData(width, height);
+        let fragPixels = fragImage.data;
+
+        const srcCtx = originalTexture.getContext('2d');
+        const srcImageData = srcCtx.getImageData(0, 0, width, height);
+        const srcPixels = srcImageData.data;
 
         for (let p = 0; p < cellMap.length; p++) {
             if (cellMap[p] !== i) continue;
@@ -205,24 +208,13 @@ export function createFragementTexture(originalImageData, cellMap, entity) {
             fragPixels[baseIndex + 3] = srcPixels[baseIndex + 3];
         }
 
-        ctx.putImageData(fragData, 0, 0);
+        ctx.putImageData(fragImage, 0, 0);
 
-        downloadCanvas(canvas, `./fragment_${i}.png`);
+        //downloadCanvas(canvas, `./fragment_${i}.png`);
         fragments.push(canvas);
     }
 
     return fragments;
-}
-
-function getImageDataFromImage(img) {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-
-    return ctx.getImageData(0, 0, img.width, img.height);
 }
 
 function downloadCanvas(canvas, filename = 'fragment.png') {
