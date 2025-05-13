@@ -20,6 +20,7 @@ export const createPhysicsEntity = () => {
     parent: null,
     texture: null,
     fractureSeeds: [],
+    textureReady: false
   };
 };
 

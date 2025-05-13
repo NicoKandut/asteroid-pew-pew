@@ -18,7 +18,7 @@ import boomUrl14 from "/img/boom/boom_14.gif?url";
 import iceUrl from "/img/ice.png?url";
 import powerupUrl from "/img/powerup.png?url";
 
-import {drawSeeds} from '../features/voronoiFracture'
+import { drawSeeds } from '../features/voronoiFracture'
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -222,7 +222,10 @@ export const render = () => {
 };
 
 const drawCircular = (entity) => {
-  const { radius, texture } = entity;
+  const { radius, texture, textureReady } = entity;
+
+  if (!textureReady)
+    return;
   const transform = ht.calcTransform(entity);
 
   context.save();
@@ -250,8 +253,7 @@ const drawCircular = (entity) => {
 
   context.restore();
 
-  if(drawVornoiSeeds)
-  {
+  if (drawVornoiSeeds) {
     drawSeeds(context, entity);
   }
 };
@@ -325,12 +327,17 @@ export const drawExplosion = (entity) => {
 };
 
 export const drawRectangular = (entity) => {
-  const { width, height, texture } = entity;
+  const { width, height, texture, textureReady } = entity;
+
+  if (!textureReady)
+    return;
+
   const transform = ht.calcTransform(entity);
 
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
+
 
   context.drawImage(texture, -width / 2, -height / 2, width, height);
 
