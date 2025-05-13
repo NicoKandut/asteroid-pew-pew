@@ -860,7 +860,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
   asteroid.hp = radius / 2;
-  asteroid.texture = texture ? texture : loadImageIntoTexture(asteroid, asteroidTextures[type]);
+  asteroid.texture = texture ? texture : loadImageIntoTexture(asteroid, asteroidTextures[type], asteroid.radius * 2, asteroid.radius * 2);
   asteroid.type = type;
 
   if (type === "turret") {
@@ -931,7 +931,7 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.radius = spaceship.width / 2;
   spaceship.hp = 5;
 
-  loadImageIntoTexture(spaceship, spaceshipUrl);
+  loadImageIntoTexture(spaceship, spaceshipUrl, spaceship.height, spaceship.width);
 
   renderer.addEntity(renderer.SPACESHIP, spaceship);
 
@@ -948,7 +948,7 @@ const addSpaceshipPart = (position, rotation, type, image, parent) => {
   part.width = 20;
   renderer.addEntity(type, part);
 
-  loadImageIntoTexture(part, image);
+  loadImageIntoTexture(part, image, part.height, part.width);
 
   parent.children ??= parent.children || [];
   parent.children.push(part);
@@ -1049,17 +1049,17 @@ const resetGame = () => {
   ui.hideGameOverMenu();
 };
 
-const loadImageIntoTexture = (entity, imageUrl) => {
+const loadImageIntoTexture = (entity, imageUrl, height, width) => {
   const image = new Image();
   image.src = imageUrl;
 
   image.onload = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = image.width;
-    canvas.height = image.height;
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(image, 0, 0);
+    ctx.drawImage(image, 0, 0, width, height);
 
     entity.texture = canvas;
     entity.textureReady = true;
