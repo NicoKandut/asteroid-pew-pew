@@ -24,8 +24,8 @@ export const getBest = (isPacifist, isStationary, isExtreme, isHitless) => {
 
 export const gameState = { ...DEFAULT };
 
-export const trackScore = (isPacifist, isStationary, isExtreme) => {
-  const best = getBest(isPacifist, isStationary, isExtreme);
+export const trackScore = (isPacifist, isStationary, isExtreme, isHitless) => {
+  const best = getBest(isPacifist, isStationary, isExtreme, isHitless);
   best.timePlayed = Math.max(best.timePlayed, gameState.timePlayed);
   best.asteroidsDestroyed = Math.max(best.asteroidsDestroyed, gameState.asteroidsDestroyed);
   best.damageDealt = Math.max(best.damageDealt, gameState.damageDealt);

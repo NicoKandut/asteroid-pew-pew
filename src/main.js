@@ -1048,7 +1048,7 @@ const endGame = () => {
   ui.updateGameOverMenu(weaponsEnabled, movementEnabled, extremeModeEnabled, hitlessModeEnabled, gameState, best);
   ui.showGameOverMenu();
 
-  trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
+  trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled, hitlessModeEnabled);
 };
 
 const resetGame = () => {
