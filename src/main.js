@@ -74,6 +74,12 @@ const setWeaponsEnabled = (enabled) => (weaponsEnabled = enabled);
 let movementEnabled = true;
 const setMovementEnabled = (enabled) => (movementEnabled = enabled);
 
+let autoFireEnabled = false;
+const setAutoFireEnabled = (enabled) => (autoFireEnabled = enabled);
+
+let autoFireRocketsEnabled = false;
+const setAutoFireRocketsEnabled = (enabled) => (autoFireRocketsEnabled = enabled)
+
 // statistics
 let updatesLastSecond = 0;
 let framesLastSecond = 0;
@@ -139,6 +145,8 @@ const main = () => {
     setDesiredFrameTime,
     setDesiredDeltaTime,
     setRocketSpeed,
+    setAutoFireEnabled,
+    setAutoFireRocketsEnabled,
     resume,
     resetGame,
     setExtremeModeEnabled
@@ -359,7 +367,7 @@ const doFrame = () => {
 
 const processEvents = () => {
   // bullets
-  if (shootingBullets && now - lastBulletTime >= bulletCooldown && spaceship) {
+  if ((shootingBullets || autoFireEnabled) && now - lastBulletTime >= bulletCooldown && spaceship) {
     const rotation = spaceship.rotation + (Math.random() - 0.5) * 0.1;
     const offsetMultiplier = bulletIndex % 2 === 0 ? -1 : 1;
     const bulletPosition = angleToUnitVector(spaceship.rotation + (Math.PI / 2) * offsetMultiplier);
@@ -378,7 +386,7 @@ const processEvents = () => {
   }
 
   // rockets
-  if (shootingRockets && now - lastRocketTime >= rocketCooldown && spaceship) {
+  if ((shootingRockets || autoFireRocketsEnabled) && now - lastRocketTime >= rocketCooldown && spaceship) {
     const targets = [
       {
         position: {

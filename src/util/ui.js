@@ -6,6 +6,8 @@ let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
 let targetFpsView = document.getElementById("target-fps");
 let targetUpsView = document.getElementById("target-ups");
+let autoFireView = document.getElementById("auto-fire");
+let autoFireRocketsView = document.getElementById("auto-fire-rockets");
 let pauseMenuView = document.getElementById("pause-menu");
 const mainMenuView = document.getElementById("main-menu");
 const pauseResumeButton = document.getElementById("pause-resume");
@@ -47,12 +49,14 @@ export const init = (
   setDesiredFrameTime,
   setDesiredDeltaTime,
   setRocketSpeed,
+  setAutoFire,
+  setAutoFireRockets,
   resume,
   reset,
   setExtremeModeEnabled
 ) => {
   initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled);
-  initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume);
+  initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, setAutoFire, setAutoFireRockets, resume);
   initGameOverMenu(start, reset);
 };
 
@@ -97,7 +101,7 @@ export const hideMainMenu = () => {
   mainMenuView.style.display = "none";
 };
 
-export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume) => {
+export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, setAutoFire, setAutoFireRockets, resume) => {
   volumeSlider.addEventListener("input", (event) => {
     setVolumeModifier(event.target.value / 100);
   });
@@ -110,6 +114,14 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
     playClickSound();
     event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
     setDesiredDeltaTime(1000 / event.target.value);
+  });
+  autoFireView.addEventListener("change", (event) => {
+    playClickSound();
+    setAutoFire(event.target.checked);
+  });
+  autoFireRocketsView.addEventListener("change", (event) => {
+    playClickSound();
+    setAutoFireRockets(event.target.checked);
   });
   debugVelocityCheckbox.addEventListener("change", (event) => {
     playClickSound();
