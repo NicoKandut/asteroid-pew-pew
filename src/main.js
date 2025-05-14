@@ -110,6 +110,11 @@ const computeAsteroidCooldown = (elapsed) => Math.pow(0.99, elapsed / 1000) * 10
 let extremeModeEnabled = false;
 const setExtremeModeEnabled = (enabled) => (extremeModeEnabled = enabled);
 
+let hitlessModeEnabled = false;
+const setHitlessModeEnabled = (enabled) => {
+  hitlessModeEnabled = enabled
+};
+
 // powerups
 let powerupCooldown = 10000;
 let lastPowerupTime = 0;
@@ -141,7 +146,8 @@ const main = () => {
     setRocketSpeed,
     resume,
     resetGame,
-    setExtremeModeEnabled
+    setExtremeModeEnabled,
+    setHitlessModeEnabled
   );
 
   // playBackgroundMusic();
@@ -730,7 +736,11 @@ const update = (deltaTime) => {
       switch (powerup.type) {
         case "health":
           spaceship.hp += 1;
-          spaceship.hp = Math.min(spaceship.hp, 5);
+          if (hitlessModeEnabled) {
+            spaceship.hp = Math.min(spaceship.hp, 1);
+          } else {
+            spaceship.hp = Math.min(spaceship.hp, 5);
+          }
           ui.updateHp(spaceship.hp);
           break;
         case "damage":
@@ -931,6 +941,10 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.radius = spaceship.width / 2;
   spaceship.hp = 5;
 
+  if (hitlessModeEnabled) {
+    spaceship.hp = 1;
+  }
+
   loadImageIntoTexture(spaceship, spaceshipUrl, spaceship.height, spaceship.width);
 
   renderer.addEntity(renderer.SPACESHIP, spaceship);
@@ -971,10 +985,10 @@ const addFlames = (position, rotation, parent) => {
 };
 
 const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
-  if (!weaponsEnabled && ["damage", "rocket-piercing"].includes(type)) {
+  if (hitlessModeEnabled && ["health"].includes(type)) {
     return;
   }
-  
+
   const powerup = createPhysicsEntity();
   powerup.type = type;
   powerup.position = position;
@@ -1013,6 +1027,9 @@ const initGame = () => {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
+  console.log(hitlessModeEnabled)
+  console.log("Setting max hp to: " + (hitlessModeEnabled ? 1 : 5))
+  ui.setMaxHp((hitlessModeEnabled ? 1 : 5));
 };
 
 const startGame = () => {
