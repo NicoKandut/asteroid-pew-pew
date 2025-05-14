@@ -39,7 +39,13 @@ import wingLeftUrl from "/img/WingLeft.png?url";
 import wingRightUrl from "/img/WingRight.png?url";
 import * as ui from "./util/ui.js";
 
-import { generateVoronoiSeeds, calculateImpactPoint, computeVoronoiField, generateNoise, createFragementTexture } from './features/voronoiFracture.js'
+import {
+  generateVoronoiSeeds,
+  calculateImpactPoint,
+  computeVoronoiField,
+  generateNoise,
+  createFragementTexture,
+} from "./features/voronoiFracture.js";
 
 // DOM elements
 let canvas = document.getElementsByTagName("canvas")[0];
@@ -112,7 +118,7 @@ const setExtremeModeEnabled = (enabled) => (extremeModeEnabled = enabled);
 
 let hitlessModeEnabled = false;
 const setHitlessModeEnabled = (enabled) => {
-  hitlessModeEnabled = enabled
+  hitlessModeEnabled = enabled;
 };
 
 // powerups
@@ -631,10 +637,9 @@ const update = (deltaTime) => {
               bullet.remove = true;
             }, 300);
           }
-        }
-        else if (asteroid.type === "split") {
+        } else if (asteroid.type === "split") {
           if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
-            console.log("Test")
+            console.log("Test");
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
             asteroid.hp -= bulletDamage;
@@ -659,7 +664,7 @@ const update = (deltaTime) => {
                 const texture = fragments[i];
 
                 const asteroid = createPhysicsEntity();
-                const position = asteroid.position
+                const position = asteroid.position;
                 const target = randomPosition();
                 const rotation = Math.random() * Math.PI * 2;
                 const velocity = {
@@ -679,8 +684,17 @@ const update = (deltaTime) => {
                 }
                 const angularVelocity = randomAngularVelocity(0.005);
                 const radius = 40;
-                const asteroidType = "default"
-                addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType, texture);
+                const asteroidType = "default";
+                addAsteroid(
+                  position,
+                  rotation,
+                  { x: 0, y: 0 },
+                  velocity,
+                  angularVelocity,
+                  radius,
+                  asteroidType,
+                  texture
+                );
               }
             }
             bullet.remove = true;
@@ -688,8 +702,7 @@ const update = (deltaTime) => {
 
             console.log(asteroid.fractureSeeds);
           }
-        }
-        else {
+        } else {
           if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
@@ -751,20 +764,23 @@ const update = (deltaTime) => {
     }
   }
 
-  const previousPosition = { ...spaceship.position };
-  velocityVerlet(spaceship, deltaTime);
-  const difference = {
-    x: spaceship.position.x - previousPosition.x,
-    y: spaceship.position.y - previousPosition.y,
-  };
-  const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
-  gameState.distanceTraveled += distance;
-  setPropulsionVolume(Math.min(distance / 100, 0.05));
-  for (const asteroid of asteroids) {
-    if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
-      handleDamageTaken();
-      if (spaceship.hp <= 0) {
-        break;
+  // spaceship
+  if (spaceship !== null && spaceship.hp > 0) {
+    const previousPosition = { ...spaceship.position };
+    velocityVerlet(spaceship, deltaTime);
+    const difference = {
+      x: spaceship.position.x - previousPosition.x,
+      y: spaceship.position.y - previousPosition.y,
+    };
+    const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
+    gameState.distanceTraveled += distance;
+    setPropulsionVolume(Math.min(distance / 100, 0.05));
+    for (const asteroid of asteroids) {
+      if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
+        handleDamageTaken();
+        if (spaceship.hp <= 0) {
+          break;
+        }
       }
     }
   }
@@ -846,13 +862,12 @@ const cleanUpEntities = () => {
   powerups = powerups.filter((powerup) => !powerup.remove);
 };
 
-
 const asteroidTextures = {
   default: asteroid1Url,
   homing: asteroidRedUrl,
   armored: asteroidArmoredUrl,
   turret: asteroidGreenUrl,
-  split: asteroid1Url
+  split: asteroid1Url,
 };
 
 const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type, texture = null) => {
@@ -866,7 +881,9 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
   asteroid.hp = radius / 2;
-  asteroid.texture = texture ? texture : loadImageIntoTexture(asteroid, asteroidTextures[type], asteroid.radius * 2, asteroid.radius * 2);
+  asteroid.texture = texture
+    ? texture
+    : loadImageIntoTexture(asteroid, asteroidTextures[type], asteroid.radius * 2, asteroid.radius * 2);
   asteroid.type = type;
 
   if (type === "turret") {
@@ -1023,9 +1040,9 @@ const initGame = () => {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
-  console.log(hitlessModeEnabled)
-  console.log("Setting max hp to: " + (hitlessModeEnabled ? 1 : 5))
-  ui.setMaxHp((hitlessModeEnabled ? 1 : 5));
+  console.log(hitlessModeEnabled);
+  console.log("Setting max hp to: " + (hitlessModeEnabled ? 1 : 5));
+  ui.setMaxHp(hitlessModeEnabled ? 1 : 5);
 };
 
 const startGame = () => {
@@ -1071,16 +1088,16 @@ const loadImageIntoTexture = (entity, imageUrl, height, width) => {
   image.src = imageUrl;
 
   image.onload = () => {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.drawImage(image, 0, 0, width, height);
 
     entity.texture = canvas;
     entity.textureReady = true;
   };
-}
+};
 
 main();
