@@ -30,9 +30,11 @@ const volumeSlider = document.getElementById("volume");
 const modePacifistView = document.getElementById("mode-pacifist");
 const modeStationaryView = document.getElementById("mode-stationary");
 const modeExtremeView = document.getElementById("mode-extreme");
+const modeHitlessView = document.getElementById("mode-hitless");
 const markPacifistView = document.getElementById("mark-pacifist");
 const markStationaryView = document.getElementById("mark-stationary");
 const markExtremeView = document.getElementById("mark-extreme");
+const markHitlessView = document.getElementById("mark-hitless");
 const backToMainMenuButton = document.getElementById("back-to-main-menu");
 const pauseBackToMainMenuButton = document.getElementById("pause-back-to-main-menu");
 const controlsMoveView = document.getElementById("controls-move");
@@ -49,14 +51,15 @@ export const init = (
   setRocketSpeed,
   resume,
   reset,
-  setExtremeModeEnabled
+  setExtremeModeEnabled,
+  setHitlessModeEnabled
 ) => {
-  initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled);
+  initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled);
   initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume);
   initGameOverMenu(start, reset);
 };
 
-export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled) => {
+export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled) => {
   startButton.addEventListener("click", () => {
     playSubmitSound();
     hideMainMenu();
@@ -86,6 +89,10 @@ export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled
   modeExtremeView.addEventListener("change", (event) => {
     playClickSound();
     setExtremeModeEnabled(event.target.checked);
+  });
+  modeHitlessView.addEventListener("change", (event) => {
+    playClickSound();
+    setHitlessModeEnabled(event.target.checked);
   });
 };
 
@@ -178,10 +185,11 @@ export const hideGameOverMenu = () => {
   gameOverView.style.display = "none";
 };
 
-export const updateGameOverMenu = (weaponsEnabled, movementEnabled, isExtreme, current, best) => {
+export const updateGameOverMenu = (weaponsEnabled, movementEnabled, isExtreme, isHitless, current, best) => {
   markPacifistView.style.display = weaponsEnabled ? "none" : "block";
   markStationaryView.style.display = movementEnabled ? "none" : "block";
   markExtremeView.style.display = isExtreme ? "block" : "none";
+  markHitlessView.style.display = isHitless ? "block" : "none";
 
   setGameOverStat(timePlayedView, current.timePlayed / 1000, best.timePlayed / 1000, "s", 1);
   setGameOverStat(asteroidsDestroyedView, current.asteroidsDestroyed, best.asteroidsDestroyed);
@@ -221,6 +229,18 @@ export const updateHp = (hp) => {
     hpView.children.item(i).style.color = i < hp ? "red" : "grey";
   }
 };
+
+export const setMaxHp = (maxHp) => {
+  hpView.innerHTML = "";
+
+  for (let i = 0; i < maxHp; i++) {
+    const hp = document.createElement("li");
+    hp.innerText = "❤";
+    hp.style.color = "red";
+
+    hpView.appendChild(hp);
+  }
+}
 
 export const updateDebugHeader = (entityCount, fps, ups) => {
   entityCountView.innerText = `${entityCount}`;

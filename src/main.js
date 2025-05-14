@@ -110,6 +110,11 @@ const computeAsteroidCooldown = (elapsed) => Math.pow(0.99, elapsed / 1000) * 10
 let extremeModeEnabled = false;
 const setExtremeModeEnabled = (enabled) => (extremeModeEnabled = enabled);
 
+let hitlessModeEnabled = false;
+const setHitlessModeEnabled = (enabled) => {
+  hitlessModeEnabled = enabled
+};
+
 // powerups
 let powerupCooldown = 10000;
 let lastPowerupTime = 0;
@@ -141,7 +146,8 @@ const main = () => {
     setRocketSpeed,
     resume,
     resetGame,
-    setExtremeModeEnabled
+    setExtremeModeEnabled,
+    setHitlessModeEnabled
   );
 
   // playBackgroundMusic();
@@ -730,7 +736,7 @@ const update = (deltaTime) => {
       switch (powerup.type) {
         case "health":
           spaceship.hp += 1;
-          spaceship.hp = Math.min(spaceship.hp, 5);
+          spaceship.hp = Math.min(spaceship.hp, spaceship.maxHp);
           ui.updateHp(spaceship.hp);
           break;
         case "damage":
@@ -929,7 +935,11 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.height = 40;
   spaceship.width = 40;
   spaceship.radius = spaceship.width / 2;
-  spaceship.hp = 5;
+  spaceship.maxHp = 5;
+  if (hitlessModeEnabled) {
+    spaceship.maxHp = 1;
+  }
+  spaceship.hp = spaceship.maxHp;
 
   loadImageIntoTexture(spaceship, spaceshipUrl, spaceship.height, spaceship.width);
 
@@ -971,10 +981,10 @@ const addFlames = (position, rotation, parent) => {
 };
 
 const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
-  if (!weaponsEnabled && ["damage", "rocket-piercing"].includes(type)) {
+  if (hitlessModeEnabled && ["health"].includes(type)) {
     return;
   }
-  
+
   const powerup = createPhysicsEntity();
   powerup.type = type;
   powerup.position = position;
@@ -1013,6 +1023,9 @@ const initGame = () => {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
+  console.log(hitlessModeEnabled)
+  console.log("Setting max hp to: " + (hitlessModeEnabled ? 1 : 5))
+  ui.setMaxHp((hitlessModeEnabled ? 1 : 5));
 };
 
 const startGame = () => {
@@ -1030,12 +1043,12 @@ const endGame = () => {
   setPropulsionVolume(0);
   spaceship = null;
 
-  const best = getBest(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
+  const best = getBest(!weaponsEnabled, !movementEnabled, extremeModeEnabled, hitlessModeEnabled);
 
-  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, extremeModeEnabled, gameState, best);
+  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, extremeModeEnabled, hitlessModeEnabled, gameState, best);
   ui.showGameOverMenu();
 
-  trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
+  trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled, hitlessModeEnabled);
 };
 
 const resetGame = () => {
