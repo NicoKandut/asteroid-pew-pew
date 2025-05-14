@@ -211,9 +211,22 @@ export const render = () => {
           const { x, y } = position;
           const { x: vx, y: vy } = velocity;
           context.moveTo(x, y);
-          context.lineTo(x + vx * 200, y + vy * 200);
+          context.lineTo(x + vx * 200, y + vy * 100);
+        }
+        if ("angularVelocity" in entity) {
+          const { position, angularVelocity } = entity;
+          const { x, y } = position;
+
+          if (angularVelocity > 0) {
+            context.moveTo(x + 20, y);
+            context.arc(x, y, 20, 0, angularVelocity * 300);
+          } else {
+            context.moveTo(x + 20 * Math.cos(angularVelocity * 300), y + 20 * Math.sin(angularVelocity * 300));
+            context.arc(x, y, 20, angularVelocity * 300, 0);
+          }
         }
       }
+
       context.stroke();
     }
   }
