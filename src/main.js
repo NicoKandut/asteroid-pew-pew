@@ -1023,9 +1023,7 @@ const initGame = () => {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
-  console.log(hitlessModeEnabled)
-  console.log("Setting max hp to: " + (hitlessModeEnabled ? 1 : 5))
-  ui.setMaxHp((hitlessModeEnabled ? 1 : 5));
+  ui.setMaxHp(spaceship.maxHp);
 };
 
 const startGame = () => {
@@ -1061,7 +1059,7 @@ const resetGame = () => {
 
   rocketPiercing = 3;
   bulletDamage = 1;
-  ui.updateHp(5);
+  ui.updateHp(spaceship.maxHp);
   ui.hidePauseMenu();
   ui.hideGameOverMenu();
 };
