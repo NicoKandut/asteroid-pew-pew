@@ -971,6 +971,10 @@ const addFlames = (position, rotation, parent) => {
 };
 
 const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
+  if (!weaponsEnabled && ["damage", "rocket-piercing"].includes(type)) {
+    return;
+  }
+  
   const powerup = createPhysicsEntity();
   powerup.type = type;
   powerup.position = position;
