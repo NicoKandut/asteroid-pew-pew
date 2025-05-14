@@ -394,8 +394,8 @@ const processEvents = () => {
     const targets = [
       {
         position: {
-          x: spaceship.position.x - Math.cos(spaceship.rotation) * 100,
-          y: spaceship.position.y - Math.sin(spaceship.rotation) * 100,
+          x: spaceship.position.x - Math.cos(spaceship.rotation) * 1000,
+          y: spaceship.position.y - Math.sin(spaceship.rotation) * 1000,
         },
       },
       {
@@ -415,9 +415,7 @@ const processEvents = () => {
       asteroid.velocity.y = 0;
       targets.push(asteroid);
     }
-    targets.push(spaceship);
-    // last point as ship. Doesn't really matter.
-    // only affects the curvature towards the last actual target
+    targets.push(targets.at(-1));
 
     addRocket(
       { ...spaceship.position },

@@ -18,7 +18,7 @@ import boomUrl14 from "/img/boom/boom_14.gif?url";
 import iceUrl from "/img/ice.png?url";
 import powerupUrl from "/img/powerup.png?url";
 
-import { drawSeeds } from '../features/voronoiFracture'
+import { drawSeeds } from "../features/voronoiFracture";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -110,7 +110,7 @@ export const setDrawSplinePaths = (draw) => {
 
 export const setDrawVoronoiSeeds = (draw) => {
   drawVornoiSeeds = draw;
-}
+};
 
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
@@ -224,8 +224,7 @@ export const render = () => {
 const drawCircular = (entity) => {
   const { radius, texture, textureReady } = entity;
 
-  if (!textureReady)
-    return;
+  if (!textureReady) return;
   const transform = ht.calcTransform(entity);
 
   context.save();
@@ -299,6 +298,12 @@ const drawRocket = (entity) => {
   context.stroke();
 
   if (drawSplinePaths) {
+    for (const target of entity.targets) {
+      context.moveTo(target.position.x, target.position.y);
+      context.arc(target.position.x, target.position.y, 4, 0, 2 * Math.PI);
+    }
+    context.fill();
+
     context.strokeStyle = "grey";
     context.beginPath();
     context.moveTo(entity.pathPoints[0].x, entity.pathPoints[0].y);
@@ -329,15 +334,13 @@ export const drawExplosion = (entity) => {
 export const drawRectangular = (entity) => {
   const { width, height, texture, textureReady } = entity;
 
-  if (!textureReady)
-    return;
+  if (!textureReady) return;
 
   const transform = ht.calcTransform(entity);
 
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
-
 
   context.drawImage(texture, -width / 2, -height / 2, width, height);
 
@@ -443,7 +446,7 @@ const drawPowerup = (entity) => {
     case "health":
       context.textAlign = "center";
       context.font = "20px Arial";
-      context.fillText("💚", 0, 7);
+      context.fillText("🧡", 0, 7);
       break;
     case "damage":
       context.fillStyle = "yellow";
@@ -452,7 +455,6 @@ const drawPowerup = (entity) => {
       context.fillText("=", 0, 7);
       break;
     case "rocket-piercing":
-      context.fillStyle = "blue";
       context.textAlign = "center";
       context.font = "20px Arial";
       context.fillText("🚀", 0, 7);
