@@ -185,10 +185,11 @@ export const hideGameOverMenu = () => {
   gameOverView.style.display = "none";
 };
 
-export const updateGameOverMenu = (weaponsEnabled, movementEnabled, isExtreme, current, best) => {
+export const updateGameOverMenu = (weaponsEnabled, movementEnabled, isExtreme, isHitless, current, best) => {
   markPacifistView.style.display = weaponsEnabled ? "none" : "block";
   markStationaryView.style.display = movementEnabled ? "none" : "block";
   markExtremeView.style.display = isExtreme ? "block" : "none";
+  markHitlessView.style.display = isHitless ? "block" : "none";
 
   setGameOverStat(timePlayedView, current.timePlayed / 1000, best.timePlayed / 1000, "s", 1);
   setGameOverStat(asteroidsDestroyedView, current.asteroidsDestroyed, best.asteroidsDestroyed);

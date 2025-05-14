@@ -736,11 +736,7 @@ const update = (deltaTime) => {
       switch (powerup.type) {
         case "health":
           spaceship.hp += 1;
-          if (hitlessModeEnabled) {
-            spaceship.hp = Math.min(spaceship.hp, 1);
-          } else {
-            spaceship.hp = Math.min(spaceship.hp, 5);
-          }
+          spaceship.hp = Math.min(spaceship.hp, spaceship.maxHp);
           ui.updateHp(spaceship.hp);
           break;
         case "damage":
@@ -939,11 +935,11 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.height = 40;
   spaceship.width = 40;
   spaceship.radius = spaceship.width / 2;
-  spaceship.hp = 5;
-
+  spaceship.maxHp = 5;
   if (hitlessModeEnabled) {
-    spaceship.hp = 1;
+    spaceship.maxHp = 1;
   }
+  spaceship.hp = spaceship.maxHp;
 
   loadImageIntoTexture(spaceship, spaceshipUrl, spaceship.height, spaceship.width);
 
@@ -1047,9 +1043,9 @@ const endGame = () => {
   setPropulsionVolume(0);
   spaceship = null;
 
-  const best = getBest(!weaponsEnabled, !movementEnabled, extremeModeEnabled);
+  const best = getBest(!weaponsEnabled, !movementEnabled, extremeModeEnabled, hitlessModeEnabled);
 
-  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, extremeModeEnabled, gameState, best);
+  ui.updateGameOverMenu(weaponsEnabled, movementEnabled, extremeModeEnabled, hitlessModeEnabled, gameState, best);
   ui.showGameOverMenu();
 
   trackScore(!weaponsEnabled, !movementEnabled, extremeModeEnabled);

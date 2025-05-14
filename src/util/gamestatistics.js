@@ -10,14 +10,15 @@ const DEFAULT = {
 
 const BEST_STRING = JSON.stringify(DEFAULT);
 
-const getScoreName = (isPacifist, isStationary, isExtreme) =>
+const getScoreName = (isPacifist, isStationary, isExtreme, isHitless) =>
   "best" +
   (isPacifist ? "-pacifist" : "-default") +
   (isStationary ? "-stationary" : "-default") +
-  (isExtreme ? "-extreme" : "-default");
+  (isExtreme ? "-extreme" : "-default") +
+  (isHitless ? "-hitless" : "-default");
 
-export const getBest = (isPacifist, isStationary, isExtreme) => {
-  const bestName = getScoreName(isPacifist, isStationary, isExtreme);
+export const getBest = (isPacifist, isStationary, isExtreme, isHitless) => {
+  const bestName = getScoreName(isPacifist, isStationary, isExtreme, isHitless);
   return JSON.parse(localStorage.getItem(bestName) || BEST_STRING);
 };
 
