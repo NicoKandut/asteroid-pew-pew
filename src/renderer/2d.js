@@ -235,7 +235,7 @@ export const render = () => {
 };
 
 const drawCircular = (entity) => {
-  const { radius, texture, textureReady } = entity;
+  const { width, height, radius, texture, textureReady } = entity;
 
   if (!textureReady) return;
   const transform = ht.calcTransform(entity);
@@ -244,7 +244,10 @@ const drawCircular = (entity) => {
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
 
-  context.drawImage(texture, -radius, -radius, radius * 2, radius * 2);
+  const calcWidth = width != 0 ? width : radius * 2;
+  const clacHeight = height != 0 ? height : radius * 2;
+
+  context.drawImage(texture, -radius, -radius, calcWidth, clacHeight);
 
   if (hitboxDrawing) {
     context.strokeStyle = RED;
@@ -259,7 +262,7 @@ const drawCircular = (entity) => {
 
   if (entity.frozen) {
     context.globalAlpha = 0.2;
-    context.drawImage(iceImage, -radius - 10, -radius - 10, radius * 2 + 20, radius * 2 + 20);
+    context.drawImage(iceImage, -radius - 10, -radius - 10, calcWidth + 20, clacHeight + 20);
     context.globalAlpha = 1;
   }
 

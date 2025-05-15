@@ -1,7 +1,7 @@
 //Settings
 const seedCount = 5;
 const bias = 0.7;
-const scale = 10;
+const scale = 2;
 
 export function generateVoronoiSeeds(impactPoint, radius) {
     const seeds = [];
@@ -197,14 +197,12 @@ export function createFragementTexture(originalTexture, cellMap, entity) {
         const fragWidth = (maxX - minX) + 1;
         const fragHeight = (maxY - minY) + 1;
 
-        const fragRadius = Math.max(fragWidth, fragHeight) / 2;
-
         const canvas = document.createElement('canvas');
-        canvas.width = fragRadius * 2;
-        canvas.height = fragRadius * 2;
+        canvas.width = fragWidth;
+        canvas.height = fragHeight;
         const ctx = canvas.getContext('2d');
 
-        const fragImage = ctx.createImageData(fragRadius * 2, fragRadius * 2);
+        const fragImage = ctx.createImageData(fragWidth, fragHeight);
         let fragPixels = fragImage.data;
 
         const srcCtx = originalTexture.getContext('2d');

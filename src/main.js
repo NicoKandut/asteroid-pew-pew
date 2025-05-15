@@ -449,7 +449,8 @@ const processEvents = () => {
       velocity.y *= 2;
     }
     const angularVelocity = randomAngularVelocity(0.005);
-    const radius = randomAsteroidSize(gameState.timePlayed);
+    //const radius = randomAsteroidSize(gameState.timePlayed);
+    const radius = 60;
     const asteroidType = extremeModeEnabled ? randomAsteroidTypeExtreme() : randomAsteroidType();
     addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType);
     lastAsteroidTime = now;
@@ -612,7 +613,6 @@ const update = (deltaTime) => {
     }
   }
 
-  debugger;
   for (const bullet of bullets) {
     void 0;
     velocityVerlet(bullet, deltaTime);
@@ -637,7 +637,6 @@ const update = (deltaTime) => {
             }, 300);
           }
         } else if (asteroid.type === "split") {
-          console.log("Test1")
           if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
@@ -654,9 +653,6 @@ const update = (deltaTime) => {
               const fragments = createFragementTexture(asteroid.texture, voronoiData.cellMap, asteroid);
 
               asteroid.texture = fragments[0];
-              console.log(fragments)
-
-              console.log(asteroid.position);
               ++gameState.asteroidsDestroyed;
               asteroid.remove = true;
               asteroid.hp = 100;
@@ -690,11 +686,13 @@ const update = (deltaTime) => {
                   velocity.y *= 2;
                 }
                 const angularVelocity = asteroid.angularVelocity;
-                const radius = texture.height / 2; 
+
+                const radius = Math.max(texture.width, texture.height) / 2;
                 const asteroidType = "default";
 
-                console.log(position);
-                addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType, texture, true);
+                addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType, texture, true, texture.width, texture.height);
+
+                console.log(radius);
               }
             }
 
@@ -870,7 +868,7 @@ const asteroidTextures = {
   split: asteroid1Url,
 };
 
-const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type, texture = null, disableColitionCheck = false) => {
+const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type, texture = null, disableColitionCheck = false, width = 0, height = 0) => {
   const asteroid = createPhysicsEntity();
   asteroid.position = position;
   asteroid.rotation = rotation;
@@ -881,15 +879,14 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
   asteroid.hp = radius / 2;
+  asteroid.width = width;
+  asteroid.height = height;
 
-  if(texture)
-  {
-    console.log(texture);
+  if (texture) {
     asteroid.texture = texture;
     asteroid.textureReady = true;
   }
-  else
-  {
+  else {
     loadImageIntoTexture(asteroid, asteroidTextures[type], asteroid.radius * 2, asteroid.radius * 2);
   }
   asteroid.type = type;
