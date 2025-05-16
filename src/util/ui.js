@@ -1,5 +1,8 @@
 import * as renderer from "../renderer/2d.js";
 import { playClickSound, playSubmitSound } from "./sound.js";
+import {setDisableVoronoiNoise} from "../main.js";
+import {setOnlySplitable} from "./random.js"
+
 
 let entityCountView = document.getElementById("entity-count");
 let fpsView = document.getElementById("fps");
@@ -15,6 +18,9 @@ const debugDrawTrajectory = document.getElementById("debug-trajectory");
 const debugSplinePaths = document.getElementById("debug-spline-paths");
 const debugRocketSpeed = document.getElementById("debug-rocket-speed");
 const debugVoronoiSeeds = document.getElementById("debug-draw-seeds");
+const debugVornoiDistanceFields = document.getElementById("debug-draw-distance");
+const debugVoronoiDisableNoise = document.getElementById("debug-disable-noise");
+const debugVoronoiSplitableOnly = document.getElementById("debug-split-only");
 const fireRateView = document.getElementById("fire-rate");
 const rocketPiercingView = document.getElementById("rocket-piercing");
 const bulletDamageView = document.getElementById("bullet-damage");
@@ -137,6 +143,18 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
   debugVoronoiSeeds.addEventListener("change", (event) => {
     playClickSound();
     renderer.setDrawVoronoiSeeds(event.target.checked);
+  });
+  debugVornoiDistanceFields.addEventListener("change", (event) => {
+    playClickSound();
+    renderer.setDrawDistanceFields(event.target.checked);
+  })
+  debugVoronoiDisableNoise.addEventListener("change", (event) => {
+    playClickSound();
+    setDisableVoronoiNoise(event.target.checked);
+  })
+  debugVoronoiSplitableOnly.addEventListener("change", (event) => {
+    playClickSound();
+    setOnlySplitable(event.target.checked);
   })
   debugRocketSpeed.addEventListener("change", (event) => {
     playClickSound();

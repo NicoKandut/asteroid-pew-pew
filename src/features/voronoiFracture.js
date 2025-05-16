@@ -3,6 +3,13 @@ const seedCount = 5;
 const bias = 0.7;
 const scale = 2;
 
+export function prepareVornoi(entity, impactEntity, disableNoise)
+{
+    entity.fractureSeeds = generateVoronoiSeeds(calculateImpactPoint(entity, impactEntity), entity.radius);
+    const noiseFn = disableNoise ? null : generateNoise(entity);
+    entity.voronoiData = computeVoronoiField(entity, noiseFn);
+}
+
 export function generateVoronoiSeeds(impactPoint, radius) {
     const seeds = [];
     for (let i = 0; i < seedCount; i++) {
@@ -64,7 +71,7 @@ export function computeVoronoiField(entity, noiseFn = null) {
     const width = radius * 2;
     const height = radius * 2;
 
-    const cellMap = new Uint8Array(width * height);
+    const cellMap = new Int16Array(width * height).fill(-1);
 
     const offscreen = document.createElement('canvas');
     offscreen.width = width;
@@ -81,6 +88,8 @@ export function computeVoronoiField(entity, noiseFn = null) {
         for (let x = 0; x < width; x++) {
             const lx = x - cx;
             const ly = y - cy;
+
+            if (lx * lx + ly * ly > radius * radius) continue;
 
             let minDistSq = Infinity;
             let closestSeedIndex = -1;
@@ -173,8 +182,10 @@ export function generateNoise(entity) {
     return noiseFn;
 }
 
-export function createFragementTexture(originalTexture, cellMap, entity) {
+export function createFragementTexture(entity) {
     const fragments = [];
+    const originalTexture = entity.texture;
+    const cellMap = entity.voronoiData.cellMap;
 
     const width = entity.radius * 2;
     const height = entity.radius * 2;
@@ -183,7 +194,7 @@ export function createFragementTexture(originalTexture, cellMap, entity) {
         let minX = width, minY = height, maxX = 0, maxY = 0
 
         for (let p = 0; p < cellMap.length; p++) {
-            if (cellMap[p] !== i) continue;
+            if (cellMap[p] === -1 || cellMap[p] !== i) continue;
 
             const currentX = p % width;
             const currentY = Math.floor(p / width);
@@ -227,7 +238,7 @@ export function createFragementTexture(originalTexture, cellMap, entity) {
         }
 
         ctx.putImageData(fragImage, 0, 0);
-
+        //downloadCanvas(canvas, `./fragment_${i}.png`);
         fragments.push(canvas);
     }
 

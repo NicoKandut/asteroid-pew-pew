@@ -18,7 +18,7 @@ import boomUrl14 from "/img/boom/boom_14.gif?url";
 import iceUrl from "/img/ice.png?url";
 import powerupUrl from "/img/powerup.png?url";
 
-import { drawSeeds } from "../features/voronoiFracture";
+import { drawSeeds } from "../features/VoronoiFracture.js";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -91,6 +91,7 @@ let hitboxDrawing = false;
 let trajectoryDrawing = false;
 let drawSplinePaths = false;
 let drawVornoiSeeds = false;
+let drawDistanceFields  = false;
 
 export const setVelocityDrawing = (draw) => {
   velocityDrawing = draw;
@@ -111,6 +112,10 @@ export const setDrawSplinePaths = (draw) => {
 export const setDrawVoronoiSeeds = (draw) => {
   drawVornoiSeeds = draw;
 };
+
+export const setDrawDistanceFields = (draw) => {
+  drawDistanceFields = draw;
+}
 
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
@@ -235,7 +240,7 @@ export const render = () => {
 };
 
 const drawCircular = (entity) => {
-  const { width, height, radius, texture, textureReady } = entity;
+  const { width, height, radius, texture, textureReady, voronoiData} = entity;
 
   if (!textureReady) return;
   const transform = ht.calcTransform(entity);
@@ -247,7 +252,9 @@ const drawCircular = (entity) => {
   const calcWidth = width != 0 ? width : radius * 2;
   const clacHeight = height != 0 ? height : radius * 2;
 
-  context.drawImage(texture, -radius, -radius, calcWidth, clacHeight);
+  const drawTexture = drawDistanceFields && voronoiData ? voronoiData.heatMap : texture;
+
+  context.drawImage(drawTexture, -radius, -radius, calcWidth, clacHeight);
 
   if (hitboxDrawing) {
     context.strokeStyle = RED;

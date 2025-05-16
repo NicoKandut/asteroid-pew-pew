@@ -31,6 +31,7 @@ import {
   setVolumeModifier,
 } from "./util/sound.js";
 import asteroid1Url from "/img/Asteroid1.png?url";
+import asteroidSplitIUrl from "/img/asteroid_split.png"
 import asteroidRedUrl from "/img/asteroid_red.png?url";
 import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
 import asteroidGreenUrl from "/img/asteroid_green.png?url";
@@ -40,17 +41,16 @@ import wingRightUrl from "/img/WingRight.png?url";
 import * as ui from "./util/ui.js";
 
 import {
-  generateVoronoiSeeds,
-  calculateImpactPoint,
-  computeVoronoiField,
-  generateNoise,
   createFragementTexture,
-} from "./features/voronoiFracture.js";
+  prepareVornoi,
+} from "./features/VoronoiFracture.js";
 
 // DOM elements
 let canvas = document.getElementsByTagName("canvas")[0];
 
 let controllerIndex = null;
+
+let voronoiNoiseDisabled = false;
 
 const BULLET_MASS = 2000;
 
@@ -449,8 +449,7 @@ const processEvents = () => {
       velocity.y *= 2;
     }
     const angularVelocity = randomAngularVelocity(0.005);
-    //const radius = randomAsteroidSize(gameState.timePlayed);
-    const radius = 60;
+    const radius = randomAsteroidSize(gameState.timePlayed);
     const asteroidType = extremeModeEnabled ? randomAsteroidTypeExtreme() : randomAsteroidType();
     addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType);
     lastAsteroidTime = now;
@@ -641,64 +640,21 @@ const update = (deltaTime) => {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
             asteroid.hp -= bulletDamage;
+                                    
+            bullet.remove = true;
+            playBulletHitSound();
 
-            asteroid.fractureSeeds = generateVoronoiSeeds(calculateImpactPoint(asteroid, bullet), asteroid.radius);
-            const noiseFn = generateNoise(asteroid);
-
-            const voronoiData = computeVoronoiField(asteroid, noiseFn);
-
-            //asteroid.texture = voronoiData.heatMap;
+            prepareVornoi(asteroid, bullet, voronoiNoiseDisabled);
 
             if (asteroid.hp <= 0) {
-              const fragments = createFragementTexture(asteroid.texture, voronoiData.cellMap, asteroid);
+              const fragments = createFragementTexture(asteroid);
 
-              asteroid.texture = fragments[0];
               ++gameState.asteroidsDestroyed;
               asteroid.remove = true;
               asteroid.hp = 100;
               playExplosionSound();
-
-              for (let frag_count = 0; frag_count < fragments.length; frag_count++) {
-                const texture = fragments[frag_count];
-
-                const originalPosition = asteroid.position;
-
-                const position = {
-                  x: originalPosition.x + Math.random(),
-                  y: originalPosition.y + Math.random()
-                };
-
-                const target = randomPosition();
-                const rotation = asteroid.rotation;
-                const velocity = {
-                  x: target.x - position.x,
-                  y: target.y - position.y
-                }
-                const length = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
-                if (length > 0) {
-                  velocity.x /= length;
-                  velocity.y /= length;
-                }
-                velocity.x *= Math.random() * 0.1 + 0.1;
-                velocity.y *= Math.random() * 0.1 + 0.1;
-                if (extremeModeEnabled) {
-                  velocity.x *= 2;
-                  velocity.y *= 2;
-                }
-                const angularVelocity = asteroid.angularVelocity;
-
-                const radius = Math.max(texture.width, texture.height) / 2;
-                const asteroidType = "default";
-
-                addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType, texture, true, texture.width, texture.height);
-
-                console.log(radius);
-              }
+              createFragments(fragments, asteroid);
             }
-
-
-            bullet.remove = true;
-            playBulletHitSound();
           }
         } else {
           if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
@@ -865,7 +821,7 @@ const asteroidTextures = {
   homing: asteroidRedUrl,
   armored: asteroidArmoredUrl,
   turret: asteroidGreenUrl,
-  split: asteroid1Url,
+  split: asteroidSplitIUrl,
 };
 
 const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type, texture = null, disableColitionCheck = false, width = 0, height = 0) => {
@@ -1104,5 +1060,44 @@ const loadImageIntoTexture = (entity, imageUrl, height, width) => {
     entity.textureReady = true;
   };
 };
+
+const createFragments = (fragments, asteroid) => {
+  for (let frag_count = 0; frag_count < fragments.length; frag_count++) {
+    const texture = fragments[frag_count];
+    const originalPosition = asteroid.position;
+    const position = {
+      x: originalPosition.x + Math.random(),
+      y: originalPosition.y + Math.random()
+    };
+    const target = randomPosition();
+    const rotation = asteroid.rotation;
+    const velocity = {
+      x: target.x - position.x,
+      y: target.y - position.y
+    }
+    const length = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
+    if (length > 0) {
+      velocity.x /= length;
+      velocity.y /= length;
+    }
+    velocity.x *= Math.random() * 0.1 + 0.1;
+    velocity.y *= Math.random() * 0.1 + 0.1;
+    if (extremeModeEnabled) {
+      velocity.x *= 2;
+      velocity.y *= 2;
+    }
+    const angularVelocity = randomAngularVelocity(0.005);
+
+    const radius = Math.max(texture.width, texture.height) / 2;
+    const asteroidType = "default";
+
+    addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType, texture, true, texture.width, texture.height);
+  }
+}
+
+export const setDisableVoronoiNoise = (draw) => {
+  voronoiNoiseDisabled = draw;
+}
+
 
 main();
