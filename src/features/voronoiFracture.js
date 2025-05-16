@@ -238,16 +238,8 @@ export function createFragementTexture(entity) {
         }
 
         ctx.putImageData(fragImage, 0, 0);
-        //downloadCanvas(canvas, `./fragment_${i}.png`);
         fragments.push(canvas);
     }
 
     return fragments;
-}
-
-function downloadCanvas(canvas, filename = 'fragment.png') {
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = canvas.toDataURL();
-    link.click();
 }
