@@ -640,7 +640,7 @@ const update = (deltaTime) => {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
             asteroid.hp -= bulletDamage;
-                                    
+
             bullet.remove = true;
             playBulletHitSound();
 
@@ -956,7 +956,23 @@ const addFlames = (position, rotation, parent) => {
   parent.children.push(flame);
 
   renderer.addEntity(renderer.FLAMES, flame);
+
+  addFlameParticle({ x: 0, y: 0 }, 0, flame);
 };
+
+const addFlameParticle = (position, rotation, parent) => {
+  const flameParticle = createPhysicsEntity();
+  flameParticle.position = position;
+  flameParticle.rotation = rotation;
+  flameParticle.parent = parent;
+  flameParticle.height = 5;
+  flameParticle.width = 5;
+
+  parent.children ??= parent.children || [];
+  parent.children.push(flameParticle);
+
+  renderer.addEntity(renderer.FLAME_PARTICLES, flameParticle);
+}
 
 const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
   if (hitlessModeEnabled && ["health"].includes(type)) {

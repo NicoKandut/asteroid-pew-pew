@@ -34,6 +34,7 @@ export const VELOCITY = "velocity";
 export const SPACESHIPPART = "spaceshippart";
 export const FLAMES = "flames";
 export const POWERUP = "powerup";
+export const FLAME_PARTICLES = "flame_particles"
 
 // COLORS
 const WHITE = "#ffffff";
@@ -71,11 +72,15 @@ const renderDetails = {
   [FLAMES]: {
     color: RED,
   },
+  [FLAME_PARTICLES]: {
+    color: "blue"
+  }
 };
 
 // CURRENT RENDERED ENTITIES
 const entities = {
   [FLAMES]: {},
+  [FLAME_PARTICLES]: {},
   [SPACESHIP]: {},
   [SPACESHIPPART]: {},
   [ASTEROID]: {},
@@ -191,6 +196,8 @@ export const render = () => {
         case FLAMES:
           drawFlames(entity);
           break;
+        case FLAME_PARTICLES:
+          drawFlameParticles(entity);
         case FLASH:
           drawFlash(entity);
           break;
@@ -424,6 +431,33 @@ export const drawFlames = (entity) => {
   //   context.lineTo(target.position.x, target.position.y);
   // }
 };
+
+export const drawFlameParticles = (entity) => {
+
+  const { width, height } = entity;
+
+  const transform = ht.calcTransform(entity);
+  
+  context.save();
+  context.translate(transform.x, transform.y);
+  context.rotate(transform.rotation);
+
+  const particleCount = 5;
+  for (let i = 0; i < particleCount; i++) {
+    const offsetX = (Math.random() - 0.5) * width * 2;
+    const offsetY = Math.random() + height;
+    const size = 1 + Math.random() * 2;
+
+    context.globalAlpha = 0.2 + Math.random() * 0.3;
+    context.fillStyle = "blue";
+    context.beginPath();
+    context.arc(offsetX, offsetY, size, 0, Math.PI * 2);
+    context.fill();
+  }
+  context.globalAlpha = 1;
+
+  context.restore();
+} 
 
 const drawFlash = (entity) => {
   const center = entity.position;
