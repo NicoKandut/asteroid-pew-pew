@@ -1,7 +1,6 @@
 import {
-  applyForce,
   checkAndResolveCollision,
-  checkCollision,
+  checkCollisionDiscDisc,
   createPhysicsEntity,
   velocityVerlet,
 } from "./features/RigidBody.js";
@@ -31,7 +30,7 @@ import {
   setVolumeModifier,
 } from "./util/sound.js";
 import asteroid1Url from "/img/Asteroid1.png?url";
-import asteroidSplitIUrl from "/img/asteroid_split.png"
+import asteroidSplitIUrl from "/img/asteroid_split.png";
 import asteroidRedUrl from "/img/asteroid_red.png?url";
 import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
 import asteroidGreenUrl from "/img/asteroid_green.png?url";
@@ -40,10 +39,7 @@ import wingLeftUrl from "/img/WingLeft.png?url";
 import wingRightUrl from "/img/WingRight.png?url";
 import * as ui from "./util/ui.js";
 
-import {
-  createFragementTexture,
-  prepareVornoi,
-} from "./features/VoronoiFracture.js";
+import { createFragementTexture, prepareVornoi } from "./features/VoronoiFracture.js";
 
 // DOM elements
 let canvas = document.getElementsByTagName("canvas")[0];
@@ -52,10 +48,10 @@ let controllerIndex = null;
 
 let voronoiNoiseDisabled = false;
 
-const BULLET_MASS = 2000;
+const BULLET_MASS = 1000;
 
 const calculateAsteroidMass = (radius, type) => {
-  const density = type === "armored" ? 10 : 3.5;
+  const density = type === "armored" ? 4 : 3.5;
   return (4 / 3) * Math.PI * radius ** 3 * density;
 };
 
@@ -112,6 +108,13 @@ const setRocketSpeed = (value) => (rocketVelocity = value);
 let asteroidCooldown = 1000;
 let lastAsteroidTime = 0;
 const computeAsteroidCooldown = (elapsed) => Math.pow(0.99, elapsed / 1000) * 1000;
+const asteroidTextures = {
+  default: asteroid1Url,
+  homing: asteroidRedUrl,
+  armored: asteroidArmoredUrl,
+  turret: asteroidGreenUrl,
+  split: asteroidSplitIUrl,
+};
 
 let extremeModeEnabled = false;
 const setExtremeModeEnabled = (enabled) => (extremeModeEnabled = enabled);
@@ -136,6 +139,11 @@ let movement = {
   rightController: false,
 };
 
+let drawCollisions = false;
+const setDrawCollisions = (enabled) => {
+  drawCollisions = enabled;
+};
+
 const main = () => {
   document.getElementById("version").innerText = `${__APP_VERSION__}`;
   lastFrameTime = performance.now();
@@ -153,9 +161,9 @@ const main = () => {
     resume,
     resetGame,
     setExtremeModeEnabled,
-    setHitlessModeEnabled
+    setHitlessModeEnabled,
+    setDrawCollisions
   );
-
   // playBackgroundMusic();
 };
 
@@ -417,13 +425,7 @@ const processEvents = () => {
     }
     targets.push(targets.at(-1));
 
-    addRocket(
-      { ...spaceship.position },
-      spaceship.rotation,
-      scale(angleToUnitVector(spaceship.rotation), 0.2),
-      0,
-      targets
-    );
+    addRocket({ ...spaceship.position }, spaceship.rotation, { x: 0, y: 0 }, 0, targets);
 
     lastRocketTime = now;
   }
@@ -454,6 +456,8 @@ const processEvents = () => {
     addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType);
     lastAsteroidTime = now;
     asteroidCooldown = computeAsteroidCooldown(gameState.timePlayed);
+
+    // addAsteroid({ x: 400, y: 400 }, Math.random() * Math.PI * 2, { x: 0, y: 0 }, { x: 0, y: 0 }, 0, 100, "armored");
   }
 
   // powerups
@@ -556,8 +560,9 @@ const update = (deltaTime) => {
 
   gameState.timePlayed += deltaTime;
 
-  for (const asteroid of asteroids) {
-    if (asteroid.type === "homing") {
+  for (let i = 0; i < asteroids.length; i++) {
+    const asteroid = asteroids[i];
+    if (asteroid.type === "homing" && spaceship !== null && !asteroid.frozen) {
       const current = normalize(asteroid.velocity);
       const target = normalize(sub(spaceship.position, asteroid.position));
       const direction = normalize(lerp(current, target, 0.002 * deltaTime));
@@ -573,6 +578,12 @@ const update = (deltaTime) => {
       dy *= velocityMagnitude;
       asteroid.velocity.x = dx;
       asteroid.velocity.y = dy;
+
+      if (isNaN(asteroid.velocity.x) || isNaN(asteroid.velocity.y)) {
+        console.warn("Homing asteroid velocity is NaN, resetting to 0");
+        asteroid.velocity.x = 0;
+        asteroid.velocity.y = 0;
+      }
     }
 
     velocityVerlet(asteroid, deltaTime);
@@ -580,11 +591,10 @@ const update = (deltaTime) => {
       asteroid.remove = true;
     }
 
-    for (const asteroid2 of asteroids) {
-      if (asteroid !== asteroid2) {
-        if (checkAndResolveCollision(asteroid, asteroid2, 1, true)) {
-          playAsteroidCollisionSound();
-        }
+    for (let j = i + 1; j < asteroids.length; j++) {
+      const asteroid2 = asteroids[j];
+      if (checkAndResolveCollision(asteroid, asteroid2, showFlash)) {
+        playAsteroidCollisionSound();
       }
     }
 
@@ -624,7 +634,7 @@ const update = (deltaTime) => {
     if (bullet.friendly) {
       for (const asteroid of asteroids) {
         if (asteroid.type === "armored") {
-          if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
+          if (checkAndResolveCollision(bullet, asteroid, showFlash)) {
             gameState.bulletsHit++;
             bullet.velocity.x *= 0.1;
             bullet.velocity.y *= 0.1;
@@ -636,7 +646,7 @@ const update = (deltaTime) => {
             }, 300);
           }
         } else if (asteroid.type === "split") {
-          if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
+          if (checkAndResolveCollision(bullet, asteroid, showFlash)) {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
             asteroid.hp -= bulletDamage;
@@ -657,7 +667,7 @@ const update = (deltaTime) => {
             }
           }
         } else {
-          if (checkAndResolveCollision(bullet, asteroid, 1, false)) {
+          if (checkAndResolveCollision(bullet, asteroid, showFlash)) {
             gameState.bulletsHit++;
             gameState.damageDealt += Math.min(asteroid.hp, bulletDamage);
             asteroid.hp -= bulletDamage;
@@ -672,7 +682,7 @@ const update = (deltaTime) => {
         }
       }
     } else {
-      if (checkAndResolveCollision(bullet, spaceship, 1, false)) {
+      if (checkAndResolveCollision(bullet, spaceship, showFlash)) {
         handleDamageTaken();
         bullet.remove = true;
         if (spaceship.hp <= 0) {
@@ -684,12 +694,22 @@ const update = (deltaTime) => {
 
   for (const rocket of rockets) {
     rocket.progress += (deltaTime / 1000) * rocketVelocity;
+    // console.log("rocket progress", rocket.progress);
+
+    const oldPosition = { ...rocket.position };
     pathInterpolate(rocket, rocket.progress, (target) => {
       target.remove = true;
       ++gameState.asteroidsDestroyed;
       gameState.damageDealt += target.hp;
       playExplosionSound();
+      if (rocket.currentTarget >= rocket.targets.length - 3) {
+        rocket.remove = true;
+        return;
+      }
     });
+    const difference = sub(rocket.position, oldPosition);
+    const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
+    console.log("rocket distance", distance);
   }
 
   for (const powerup of powerups) {
@@ -697,7 +717,7 @@ const update = (deltaTime) => {
     if (outOfBounds(powerup.position)) {
       powerup.remove = true;
     }
-    if (checkCollision(powerup, spaceship)) {
+    if (checkCollisionDiscDisc(powerup, spaceship)) {
       powerup.remove = true;
       playPowerupSound();
       switch (powerup.type) {
@@ -730,7 +750,7 @@ const update = (deltaTime) => {
     gameState.distanceTraveled += distance;
     setPropulsionVolume(Math.min(distance / 100, 0.05));
     for (const asteroid of asteroids) {
-      if (checkAndResolveCollision(spaceship, asteroid, 1, true)) {
+      if (checkAndResolveCollision(spaceship, asteroid, showFlash)) {
         handleDamageTaken();
         if (spaceship.hp <= 0) {
           break;
@@ -816,15 +836,19 @@ const cleanUpEntities = () => {
   powerups = powerups.filter((powerup) => !powerup.remove);
 };
 
-const asteroidTextures = {
-  default: asteroid1Url,
-  homing: asteroidRedUrl,
-  armored: asteroidArmoredUrl,
-  turret: asteroidGreenUrl,
-  split: asteroidSplitIUrl,
-};
-
-const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity, radius, type, texture = null, disableColitionCheck = false, width = 0, height = 0) => {
+const addAsteroid = (
+  position,
+  rotation,
+  acceleration,
+  velocity,
+  angularVelocity,
+  radius,
+  type,
+  texture = null,
+  disableColitionCheck = false,
+  width = 0,
+  height = 0
+) => {
   const asteroid = createPhysicsEntity();
   asteroid.position = position;
   asteroid.rotation = rotation;
@@ -833,7 +857,8 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   asteroid.angularVelocity = angularVelocity;
   asteroid.mass = calculateAsteroidMass(radius, type);
   asteroid.radius = type === "armored" ? radius * 2 : radius;
-  asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2;
+  asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2; // accurate but boring
+  // asteroid.inertia = 1.5;
   asteroid.hp = radius / 2;
   asteroid.width = width;
   asteroid.height = height;
@@ -841,8 +866,7 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
   if (texture) {
     asteroid.texture = texture;
     asteroid.textureReady = true;
-  }
-  else {
+  } else {
     loadImageIntoTexture(asteroid, asteroidTextures[type], asteroid.radius * 2, asteroid.radius * 2);
   }
   asteroid.type = type;
@@ -854,11 +878,11 @@ const addAsteroid = (position, rotation, acceleration, velocity, angularVelocity
 
   // do not spawn asteroids inside each other
   // do not spawn asteroids on top of other entities
-  if (!disableColitionCheck && checkCollision(asteroid, spaceship)) {
+  if (!disableColitionCheck && checkCollisionDiscDisc(asteroid, spaceship)) {
     return;
   }
   for (const other of asteroids) {
-    if (!disableColitionCheck && checkCollision(asteroid, other)) {
+    if (!disableColitionCheck && checkCollisionDiscDisc(asteroid, other)) {
       return;
     }
   }
@@ -972,7 +996,7 @@ const addFlameParticle = (position, rotation, parent) => {
   parent.children.push(flameParticle);
 
   renderer.addEntity(renderer.FLAME_PARTICLES, flameParticle);
-}
+};
 
 const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
   if (hitlessModeEnabled && ["health"].includes(type)) {
@@ -1017,8 +1041,6 @@ const initGame = () => {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   addSpaceship({ x: canvas.width / 2, y: canvas.height / 2 }, 0, { x: 0, y: 0 }, 0);
-  console.log(hitlessModeEnabled);
-  console.log("Setting max hp to: " + (hitlessModeEnabled ? 1 : 5));
   ui.setMaxHp(hitlessModeEnabled ? 1 : 5);
 };
 
@@ -1046,6 +1068,14 @@ const endGame = () => {
 };
 
 const resetGame = () => {
+  lastUpdateTime = performance.now();
+  lastFrameTime = lastUpdateTime;
+  lastSummaryTime = lastFrameTime;
+  lastAsteroidTime = lastFrameTime;
+  lastBulletTime = lastFrameTime;
+  lastRocketTime = lastFrameTime;
+  lastPowerupTime = lastFrameTime;
+
   resetGameState();
   renderer.removeAllEntities();
   asteroids = [];
@@ -1083,14 +1113,14 @@ const createFragments = (fragments, asteroid) => {
     const originalPosition = asteroid.position;
     const position = {
       x: originalPosition.x + Math.random(),
-      y: originalPosition.y + Math.random()
+      y: originalPosition.y + Math.random(),
     };
     const target = randomPosition();
     const rotation = asteroid.rotation;
     const velocity = {
       x: target.x - position.x,
-      y: target.y - position.y
-    }
+      y: target.y - position.y,
+    };
     const length = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
     if (length > 0) {
       velocity.x /= length;
@@ -1107,13 +1137,43 @@ const createFragments = (fragments, asteroid) => {
     const radius = Math.max(texture.width, texture.height) / 2;
     const asteroidType = "default";
 
-    addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType, texture, true, texture.width, texture.height);
+    addAsteroid(
+      position,
+      rotation,
+      { x: 0, y: 0 },
+      velocity,
+      angularVelocity,
+      radius,
+      asteroidType,
+      texture,
+      true,
+      texture.width,
+      texture.height
+    );
   }
-}
+};
 
 export const setDisableVoronoiNoise = (draw) => {
   voronoiNoiseDisabled = draw;
-}
+};
 
+const showFlash = (a, b, collisionPoint, normal) => {
+  if (drawCollisions) {
+    renderer.addEntity(renderer.COLLISION, {
+      a,
+      b,
+      collisionPoint,
+      normal,
+      lifetime: 100,
+    });
+  } else {
+    const flash = {
+      position: collisionPoint,
+      rotation: Math.random() * Math.PI * 2,
+    };
+    renderer.addEntity(renderer.FLASH, flash);
+    setTimeout(() => renderer.removeEntity(renderer.FLASH, flash.id), 100);
+  }
+};
 
 main();

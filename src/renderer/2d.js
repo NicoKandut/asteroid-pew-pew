@@ -34,7 +34,8 @@ export const VELOCITY = "velocity";
 export const SPACESHIPPART = "spaceshippart";
 export const FLAMES = "flames";
 export const POWERUP = "powerup";
-export const FLAME_PARTICLES = "flame_particles"
+export const FLAME_PARTICLES = "flame_particles";
+export const COLLISION = "collision";
 
 // COLORS
 const WHITE = "#ffffff";
@@ -73,8 +74,8 @@ const renderDetails = {
     color: RED,
   },
   [FLAME_PARTICLES]: {
-    color: "blue"
-  }
+    color: "blue",
+  },
 };
 
 // CURRENT RENDERED ENTITIES
@@ -89,14 +90,15 @@ const entities = {
   [EXPLOSION]: {},
   [FLASH]: {},
   [POWERUP]: {},
+  [COLLISION]: {},
 };
 
 let velocityDrawing = false;
 let hitboxDrawing = false;
 let trajectoryDrawing = false;
-let drawSplinePaths = false;
+let drawSplinePaths = true;
 let drawVornoiSeeds = false;
-let drawDistanceFields  = false;
+let drawDistanceFields = false;
 
 export const setVelocityDrawing = (draw) => {
   velocityDrawing = draw;
@@ -120,7 +122,7 @@ export const setDrawVoronoiSeeds = (draw) => {
 
 export const setDrawDistanceFields = (draw) => {
   drawDistanceFields = draw;
-}
+};
 
 // RENDER ENTITY MANAGEMENT
 export const addEntity = (type, entity) => {
@@ -204,9 +206,14 @@ export const render = () => {
         case POWERUP:
           drawPowerup(entity);
           break;
+        case COLLISION:
+          drawCollision(entity);
+          break;
       }
 
-      ht.addTrajectory(entity.id, ht.calcTransform(entity));
+      if (type !== COLLISION && type !== EXPLOSION && type !== FLASH) {
+        ht.addTrajectory(entity.id, ht.calcTransform(entity));
+      }
     }
 
     //context.fill();
@@ -223,7 +230,7 @@ export const render = () => {
           const { x, y } = position;
           const { x: vx, y: vy } = velocity;
           context.moveTo(x, y);
-          context.lineTo(x + vx * 200, y + vy * 100);
+          context.lineTo(x + vx * 200, y + vy * 200);
         }
         if ("angularVelocity" in entity) {
           const { position, angularVelocity } = entity;
@@ -247,7 +254,7 @@ export const render = () => {
 };
 
 const drawCircular = (entity) => {
-  const { width, height, radius, texture, textureReady, voronoiData} = entity;
+  const { width, height, radius, texture, textureReady, voronoiData } = entity;
 
   if (!textureReady) return;
   const transform = ht.calcTransform(entity);
@@ -433,11 +440,10 @@ export const drawFlames = (entity) => {
 };
 
 export const drawFlameParticles = (entity) => {
-
   const { width, height } = entity;
 
   const transform = ht.calcTransform(entity);
-  
+
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
@@ -457,7 +463,7 @@ export const drawFlameParticles = (entity) => {
   context.globalAlpha = 1;
 
   context.restore();
-} 
+};
 
 const drawFlash = (entity) => {
   const center = entity.position;
@@ -466,6 +472,7 @@ const drawFlash = (entity) => {
   const outerRadius = 15;
 
   context.fillStyle = "white";
+  context.strokeStyle = "none";
   context.beginPath();
   context.translate(center.x, center.y);
   context.rotate(rotation);
@@ -519,4 +526,64 @@ const drawPowerup = (entity) => {
   }
 
   context.restore();
+};
+
+const addPathAngularVelocity = (x, y, angularVelocity, radius, scale = 300) => {
+  if (angularVelocity > 0) {
+    context.moveTo(x + radius, y);
+    context.arc(x, y, radius, 0, angularVelocity * scale);
+  } else {
+    context.moveTo(x + radius * Math.cos(angularVelocity * scale), y + radius * Math.sin(angularVelocity * scale));
+    context.arc(x, y, radius, angularVelocity * scale, 0);
+  }
+};
+
+const drawCollision = (entity) => {
+  const { a, b, collisionPoint, normal, lifetime } = entity;
+
+  if (lifetime == 0) {
+    removeEntity(COLLISION, entity.id);
+    return;
+  }
+
+  entity.lifetime--;
+
+  context.strokeStyle = "white";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(a.position.x + a.radius, a.position.y);
+  context.arc(a.position.x, a.position.y, a.radius, 0, 2 * Math.PI);
+  context.moveTo(b.position.x + b.radius, b.position.y);
+  context.arc(b.position.x, b.position.y, b.radius, 0, 2 * Math.PI);
+  context.stroke();
+
+  // normal
+  context.strokeStyle = "magenta";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(collisionPoint.x, collisionPoint.y);
+  context.lineTo(collisionPoint.x + normal.x * 20, collisionPoint.y + normal.y * 20);
+  context.stroke();
+
+  // old velocity
+  context.strokeStyle = "red";
+  context.beginPath();
+  context.moveTo(a.position.x, a.position.y);
+  context.lineTo(a.position.x + a.oldVelocity.x * 200, a.position.y + a.oldVelocity.y * 200);
+  context.moveTo(b.position.x, b.position.y);
+  context.lineTo(b.position.x + b.oldVelocity.x * 200, b.position.y + b.oldVelocity.y * 200);
+  addPathAngularVelocity(a.position.x, a.position.y, a.oldAngularVelocity, 20);
+  addPathAngularVelocity(b.position.x, b.position.y, b.oldAngularVelocity, 20);
+  context.stroke();
+
+  // new velocity
+  context.strokeStyle = "green";
+  context.beginPath();
+  context.moveTo(a.position.x, a.position.y);
+  context.lineTo(a.position.x + a.newVelocity.x * 200, a.position.y + a.newVelocity.y * 200);
+  context.moveTo(b.position.x, b.position.y);
+  context.lineTo(b.position.x + b.newVelocity.x * 200, b.position.y + b.newVelocity.y * 200);
+  addPathAngularVelocity(a.position.x, a.position.y, a.newAngularVelocity, 25);
+  addPathAngularVelocity(b.position.x, b.position.y, b.newAngularVelocity, 25);
+  context.stroke();
 };

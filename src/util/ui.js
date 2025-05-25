@@ -3,7 +3,6 @@ import { playClickSound, playSubmitSound } from "./sound.js";
 import {setDisableVoronoiNoise} from "../main.js";
 import {setOnlySplitable} from "./random.js"
 
-
 let entityCountView = document.getElementById("entity-count");
 let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
@@ -21,6 +20,7 @@ const debugVoronoiSeeds = document.getElementById("debug-draw-seeds");
 const debugVornoiDistanceFields = document.getElementById("debug-draw-distance");
 const debugVoronoiDisableNoise = document.getElementById("debug-disable-noise");
 const debugVoronoiSplitableOnly = document.getElementById("debug-split-only");
+const debugDrawCollisions = document.getElementById("debug-draw-collisions");
 const fireRateView = document.getElementById("fire-rate");
 const rocketPiercingView = document.getElementById("rocket-piercing");
 const bulletDamageView = document.getElementById("bullet-damage");
@@ -58,10 +58,11 @@ export const init = (
   resume,
   reset,
   setExtremeModeEnabled,
-  setHitlessModeEnabled
+  setHitlessModeEnabled,
+  setDrawCollisions
 ) => {
   initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled);
-  initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume);
+  initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume, setDrawCollisions);
   initGameOverMenu(start, reset);
 };
 
@@ -110,7 +111,7 @@ export const hideMainMenu = () => {
   mainMenuView.style.display = "none";
 };
 
-export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume) => {
+export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume, setDrawCollisions) => {
   volumeSlider.addEventListener("input", (event) => {
     setVolumeModifier(event.target.value / 100);
   });
@@ -170,6 +171,10 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
     playSubmitSound();
     hidePauseMenu();
     showMainMenu();
+  });
+  debugDrawCollisions.addEventListener("change", (event) => {
+    playClickSound();
+    setDrawCollisions(event.target.checked);
   });
 };
 

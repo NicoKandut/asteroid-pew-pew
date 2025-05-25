@@ -3,10 +3,10 @@ export const dot = (a, b) => {
 };
 
 export const normalize = (vector) => {
-  const length = Math.sqrt(vector.x ** 2 + vector.y ** 2);
+  const l = length(vector);
   return {
-    x: vector.x / length,
-    y: vector.y / length,
+    x: vector.x / l,
+    y: vector.y / l,
   };
 };
 
@@ -24,6 +24,10 @@ export const add = (a, b) => {
 
 export const sub = (a, b) => {
   return { x: a.x - b.x, y: a.y - b.y };
+};
+
+export const mul = (a, b) => {
+  return { x: a.x * b.x, y: a.y * b.y };
 };
 
 export const scale = (vector, scalar) => {

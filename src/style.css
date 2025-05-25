@@ -96,6 +96,7 @@ canvas {
   /* background: radial-gradient(circle at 50% 50%, rgb(0, 0, 2) 0, black 100%); */
   animation: bg 60s linear infinite;
   filter: var(--drop-shadow-3d);
+  cursor: crosshair;
 }
 
 #bg {
@@ -190,6 +191,12 @@ kbd {
     width: 420px;
     filter: var(--drop-shadow-3d);
     border: 2px solid white;
+
+    > div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
   }
 }
 
@@ -379,5 +386,21 @@ label {
 
   .previous-best {
     color: gray;
+  }
+}
+
+#eye {
+  width: 36px;
+  text-align: center;
+  cursor: help;
+}
+
+:has(#eye:hover) {
+  > .overlay {
+    display: none;
+  }
+
+  > .menu {
+    opacity: 0;
   }
 }
