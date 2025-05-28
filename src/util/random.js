@@ -4,7 +4,7 @@ let onlySplitable = false;
 
 export const setOnlySplitable = (draw) => {
   onlySplitable = draw;
-}
+};
 
 export const randomPosition = () => {
   return {
@@ -87,13 +87,13 @@ export const randomRangeWithProbability = (values, probabilities) => {
 };
 
 export const randomAsteroidType = () => {
-  const types = ["default", "split", "homing", "armored", "turret"];
-  const probabilities = [0.65, 0.2, 0.05, 0.05, 0.05];
+  const types = ["default", "armored",];
+  const probabilities = [0.5, 0.5];
   return onlySplitable ? "split" : randomRangeWithProbability(types, probabilities);
 };
 
 export const randomAsteroidTypeExtreme = () => {
-  const types = ["homing", "armored", "turret"];
-  const probabilities = [0.34, 0.33, 0.33];
+  const types = ["split", "homing", "armored", "turret"];
+  const probabilities = [0.25, 0.25, 0.25, 0.25];
   return randomRangeWithProbability(types, probabilities);
 };

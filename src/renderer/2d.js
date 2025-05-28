@@ -287,7 +287,7 @@ const drawCircular = (entity) => {
 
   if (entity.frozen) {
     context.globalAlpha = 0.2;
-    context.drawImage(iceImage, -radius - 10, -radius - 10, calcWidth + 20, clacHeight + 20);
+    context.drawImage(iceImage, -radius - 20, -radius - 20, calcWidth + 40, clacHeight + 40);
     context.globalAlpha = 1;
   }
 

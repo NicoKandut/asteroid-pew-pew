@@ -740,22 +740,16 @@ const update = (deltaTime) => {
 
   for (const rocket of rockets) {
     rocket.progress += (deltaTime / 1000) * rocketVelocity;
-    // console.log("rocket progress", rocket.progress);
-
-    const oldPosition = { ...rocket.position };
     pathInterpolate(rocket, rocket.progress, (target) => {
       target.remove = true;
       ++gameState.asteroidsDestroyed;
       gameState.damageDealt += target.hp;
       playExplosionSound();
-      if (rocket.currentTarget >= rocket.targets.length - 3) {
+      if (rocket.currentTarget >= rocket.targets.length - 4) {
         rocket.remove = true;
         return;
       }
     });
-    const difference = sub(rocket.position, oldPosition);
-    const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
-    // console.log("rocket distance", distance);
   }
 
   for (const powerup of powerups) {
@@ -799,7 +793,6 @@ const update = (deltaTime) => {
     // collision checks
     for (const asteroid of asteroids) {
       if (checkAndResolveCollision(spaceship, asteroid, showFlash)) {
-        // spaceship.angularVelocity /= 500; // cheat a bit to prevent spaceship from spinning out of control
         handleDamageTaken();
         if (spaceship.hp <= 0) {
           break;
@@ -821,33 +814,6 @@ const update = (deltaTime) => {
       spaceship.angularVelocity *= Math.pow(0.25, deltaTime / 1000);
     }
   }
-
-  // // automatic brake
-  // if (controllerIndex == null) {
-  //   if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
-  //     spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
-  //     spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
-  //   }
-  // } else {
-  //   const gamepad = navigator.getGamepads()[controllerIndex];
-  //   if (
-  //     Math.abs(gamepad.axes[0]) < 0.01 &&
-  //     Math.abs(gamepad.axes[1]) < 0.01 &&
-  //     !movement.forward &&
-  //     !movement.backward &&
-  //     !movement.left &&
-  //     !movement.right &&
-  //     !movement.forwardController &&
-  //     !movement.backwardController &&
-  //     !movement.leftController &&
-  //     !movement.rightController
-  //   ) {
-  //     spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
-  //     spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
-  //   }
-  // }
-
-  // spaceship.angularVelocity *= Math.pow(0.01, deltaTime / 1000);
 
   // bounce off walls
   if (spaceship.position.x < 0 || spaceship.position.x > canvas.width) {
