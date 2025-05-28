@@ -11,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Asteroid Pew Pew</title>
     <link rel="icon" type="image/png" href="/asteroid-pew-pew/favicon.png" sizes="90x90" />
-    <script type="module" crossorigin src="/asteroid-pew-pew/assets/index-C-5J2Dd5.js"></script>
+    <script type="module" crossorigin src="/asteroid-pew-pew/assets/index-D6_T2F-g.js"></script>
     <link rel="stylesheet" crossorigin href="/asteroid-pew-pew/assets/index-BwuR5NkR.css">
   </head>
 
@@ -28,10 +28,27 @@
       <section id="overlay-saturate" class="overlay"></section>
       <section id="overlay-scanlines" class="overlay"></section>
       <section id="hints">
-        <div id="controls-pause"><kbd>Esc</kbd> <kbd>☰</kbd> Pause</div>
-        <div id="controls-move"><kbd>WASD</kbd> <kbd>&#128377;</kbd> <kbd>✜</kbd> Move</div>
-        <div id="controls-bullet"><kbd>Space</kbd> <kbd>R-Trigger</kbd> Shoot</div>
-        <div id="controls-rocket"><kbd>Shift</kbd> <kbd>L-Trigger</kbd> Rocket</div>
+        <div id="controls-pause">
+          <kbd class="keyboard">Esc</kbd>
+          <kbd class="controller">☰</kbd>
+          Pause
+        </div>
+        <div id="controls-move">
+          <kbd class="keyboard">WASD</kbd>
+          <kbd class="controller">&#128377;</kbd>
+          <kbd class="controller">✜</kbd>
+          Move
+        </div>
+        <div id="controls-bullet">
+          <kbd class="keyboard">Space</kbd>
+          <kbd class="controller">R-Trigger</kbd>
+          Shoot
+        </div>
+        <div id="controls-rocket">
+          <kbd class="keyboard">Shift</kbd>
+          <kbd class="controller">L-Trigger</kbd>
+          Rocket
+        </div>
       </section>
       <section id="stats">
         <div>Fire rate: <span id="fire-rate">10.0</span> shots/s</div>
@@ -129,6 +146,10 @@
         <label for="debug-draw-collisions">
           [DEBUG] Collision Visualization
           <input type="checkbox" id="debug-draw-collisions" />
+        </label>
+        <label for="debug-box-colliders">
+          [DEBUG] Use Box Colliders
+          <input type="checkbox" id="debug-box-colliders" />
         </label>
         <button id="pause-resume" class="positive">Resume</button>
         <button id="pause-back-to-main-menu" class="negative">Main Menu</button>
