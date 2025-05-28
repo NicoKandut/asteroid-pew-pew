@@ -144,8 +144,10 @@ export const checkCollisionDiscBox = (disc, box) => {
     x: Math.max(-box.width / 2, Math.min(local.x, box.width / 2)),
     y: Math.max(-box.height / 2, Math.min(local.y, box.height / 2)),
   };
+
   const distance = sub(local, closest);
   const d = Math.sqrt(distance.x * distance.x + distance.y * distance.y);
+
   if (d <= disc.radius) {
     const cos = Math.cos(box.rotation);
     const sin = Math.sin(box.rotation);
@@ -154,16 +156,27 @@ export const checkCollisionDiscBox = (disc, box) => {
       y: box.position.y + closest.x * sin + closest.y * cos,
     };
     const normal = normalize(sub(disc.position, closestGlobal));
+    const difference = normalize(sub(box.position, disc.position));
+    const similarity = dot(normal, difference);
+    if (similarity < 0) {
+      normal.x = -normal.x;
+      normal.y = -normal.y;
+    }
+
+    if (isNaN(normal.x) || isNaN(normal.y)) {
+      console.warn("Collision normal is NaN", disc, box, normal);
+      return null;
+    }
 
     const collisionPoint = {
-      x: disc.position.x - normal.x * disc.radius,
-      y: disc.position.y - normal.y * disc.radius,
+      x: disc.position.x + normal.x * disc.radius,
+      y: disc.position.y +   normal.y * disc.radius,
     };
     const overlap = disc.radius - d + 0.00001; // +small epsilon
 
     if (isNaN(collisionPoint.x) || isNaN(collisionPoint.y)) {
       console.warn("Collision point is NaN", disc, box, collisionPoint);
-      debugger;
+      return null;
     }
 
     return {
