@@ -850,6 +850,9 @@ const cleanUpEntities = () => {
       renderer.removeEntity(renderer.ROCKET, rocket.id);
       rocket.children.forEach((child) => {
         renderer.removeEntity(renderer.FLAMES, child.id);
+        for (const particle of child.children) {
+          renderer.removeEntity(renderer.FLAME_PARTICLES, particle.id);
+        }
       });
     }
   });
@@ -1069,6 +1072,9 @@ const removeSpaceshipFromRenderer = () => {
       renderer.removeEntity(renderer.SPACESHIPPART, wing.id);
       for (let flame of wing.children) {
         renderer.removeEntity(renderer.FLAMES, flame.id);
+        for (let particle of flame.children) {
+          renderer.removeEntity(renderer.FLAME_PARTICLES, particle.id);
+        }
       }
     }
   }
