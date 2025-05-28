@@ -35,8 +35,7 @@ import {
 import asteroid1Url from "/img/Asteroid1.png?url";
 import asteroidSplitIUrl from "/img/asteroid_split.png";
 import asteroidRedUrl from "/img/asteroid_red.png?url";
-// import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
-import asteroidArmoredUrl from "/img/asteroid_armored.avif?url";
+import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
 import asteroidGreenUrl from "/img/asteroid_green.png?url";
 import spaceshipUrl from "/img/Spaceship.png?url";
 import wingLeftUrl from "/img/WingLeft.png?url";
@@ -890,7 +889,7 @@ const addAsteroid = (
   asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2; // accurate but boring
   asteroid.hp = radius / 2;
-  asteroid.collider = boxColliders || type === "armored" ? BOX : DISC;
+  asteroid.collider = boxColliders || (width > 0 && height > 0) || type === "armored" ? BOX : DISC;
   asteroid.width = width || asteroid.radius * 2;
   asteroid.height = height || asteroid.radius * 2;
 
