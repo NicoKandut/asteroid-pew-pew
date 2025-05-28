@@ -87,8 +87,8 @@ export const randomRangeWithProbability = (values, probabilities) => {
 };
 
 export const randomAsteroidType = () => {
-  const types = ["default", "armored",];
-  const probabilities = [0.5, 0.5];
+  const types = ["default", "split", "homing", "armored", "turret"];
+  const probabilities = [0.8, 0.05, 0.05, 0.05, 0.05];
   return onlySplitable ? "split" : randomRangeWithProbability(types, probabilities);
 };
 
