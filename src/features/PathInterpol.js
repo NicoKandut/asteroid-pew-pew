@@ -1,10 +1,10 @@
 import { sub, length } from "../util/linalg.js";
 
 const SAMPLE_STEP = 40;
-const τ = 0.0;
+const τ = 0.9;
 
 const catmullRom1D = (t, p0, p1, p2, p3) =>
-  1 * p1 * 1 +
+  p1 +
   (-τ * p0 + τ * p2) * t +
   (2 * τ * p0 + (τ - 3) * p1 + (3 - 2 * τ) * p2 - τ * p3) * t * t +
   (-τ * p0 + (2 - τ) * p1 + (τ - 2) * p2 + τ * p3) * t * t * t;

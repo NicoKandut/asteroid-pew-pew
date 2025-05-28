@@ -1,7 +1,11 @@
 import {
+  BOX,
+  calculateTotalMomentum,
   checkAndResolveCollision,
+  checkCollisionBoxBox,
   checkCollisionDiscDisc,
   createPhysicsEntity,
+  DISC,
   velocityVerlet,
 } from "./features/RigidBody.js";
 import { pathInterpolate, createArcLengthTable, samplePath } from "./features/PathInterpol.js";
@@ -20,7 +24,6 @@ import { gameState, getBest, resetGameState, trackScore } from "./util/gamestati
 import {
   playArmorHitSound,
   playAsteroidCollisionSound,
-  playBackgroundMusic,
   playBulletHitSound,
   playBulletShootSound,
   playExplosionSound,
@@ -49,6 +52,8 @@ let controllerIndex = null;
 let voronoiNoiseDisabled = false;
 
 const BULLET_MASS = 1000;
+const SPACESHIP_MASS = 10000;
+const SPACESHIP_FORCE = 5;
 
 const calculateAsteroidMass = (radius, type) => {
   const density = type === "armored" ? 4 : 3.5;
@@ -139,9 +144,17 @@ let movement = {
   rightController: false,
 };
 
-let drawCollisions = false;
+let drawCollisions = true;
 const setDrawCollisions = (enabled) => {
   drawCollisions = enabled;
+};
+
+let boxColliders = false;
+const setDebugBoxColliders = (enabled) => {
+  boxColliders = enabled;
+  asteroids.forEach((asteroid) => {
+    asteroid.collider = enabled ? BOX : DISC;
+  });
 };
 
 const main = () => {
@@ -162,7 +175,8 @@ const main = () => {
     resetGame,
     setExtremeModeEnabled,
     setHitlessModeEnabled,
-    setDrawCollisions
+    setDrawCollisions,
+    setDebugBoxColliders
   );
   // playBackgroundMusic();
 };
@@ -421,6 +435,10 @@ const processEvents = () => {
       asteroid.frozen = true;
       asteroid.velocity.x = 0;
       asteroid.velocity.y = 0;
+      asteroid.angularVelocity = 0;
+      asteroid.force.x = 0;
+      asteroid.force.y = 0;
+      asteroid.torque = 0;
       targets.push(asteroid);
     }
     targets.push(targets.at(-1));
@@ -433,12 +451,17 @@ const processEvents = () => {
   // spawn new asteroids
   if (now - lastAsteroidTime >= asteroidCooldown) {
     const position = randomPositionOnEdge();
+    // const position = { x: 200, y: 200 };
     const target = randomPosition();
     const rotation = Math.random() * Math.PI * 2;
     const velocity = {
       x: target.x - position.x,
       y: target.y - position.y,
     };
+    // const velocity = {
+    //   x: 0,
+    //   y: 0,
+    // };
     const length = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
     if (length > 0) {
       velocity.x /= length;
@@ -450,14 +473,15 @@ const processEvents = () => {
       velocity.x *= 2;
       velocity.y *= 2;
     }
-    const angularVelocity = randomAngularVelocity(0.005);
+    const angularVelocity = randomAngularVelocity(0.0005);
+    // const angularVelocity = 0;
     const radius = randomAsteroidSize(gameState.timePlayed);
+    // const radius = 25;
     const asteroidType = extremeModeEnabled ? randomAsteroidTypeExtreme() : randomAsteroidType();
+    // const asteroidType = "armored";
     addAsteroid(position, rotation, { x: 0, y: 0 }, velocity, angularVelocity, radius, asteroidType);
     lastAsteroidTime = now;
     asteroidCooldown = computeAsteroidCooldown(gameState.timePlayed);
-
-    // addAsteroid({ x: 400, y: 400 }, Math.random() * Math.PI * 2, { x: 0, y: 0 }, { x: 0, y: 0 }, 0, 100, "armored");
   }
 
   // powerups
@@ -507,22 +531,22 @@ const processEvents = () => {
         xMulti = -1;
       }
 
-      spaceship.force.y += 0.004 * yMulti;
-      spaceship.force.x += 0.004 * xMulti;
+      spaceship.force.y += SPACESHIP_FORCE * yMulti;
+      spaceship.force.x += SPACESHIP_FORCE * xMulti;
     }
 
     if (spaceship.force.x == 0 && spaceship.force.y == 0) {
       if (movement.forward || movement.forwardController) {
-        spaceship.force.y -= 0.004;
+        spaceship.force.y -= SPACESHIP_FORCE;
       }
       if (movement.backward || movement.backwardController) {
-        spaceship.force.y += 0.004;
+        spaceship.force.y += SPACESHIP_FORCE;
       }
       if (movement.left || movement.leftController) {
-        spaceship.force.x -= 0.004;
+        spaceship.force.x -= SPACESHIP_FORCE;
       }
       if (movement.right || movement.rightController) {
-        spaceship.force.x += 0.004;
+        spaceship.force.x += SPACESHIP_FORCE;
       }
     }
   }
@@ -539,7 +563,11 @@ const outOfBounds = (position) => {
 };
 
 const handleDamageTaken = () => {
+  if (spaceship.invincible > 0) {
+    return;
+  }
   spaceship.hp -= 1;
+  spaceship.invincible = 120;
   playSpaceshipCollisionSound();
   if (spaceship.hp >= 0) {
     ui.updateHp(spaceship.hp);
@@ -580,9 +608,8 @@ const update = (deltaTime) => {
       asteroid.velocity.y = dy;
 
       if (isNaN(asteroid.velocity.x) || isNaN(asteroid.velocity.y)) {
-        console.warn("Homing asteroid velocity is NaN, resetting to 0");
-        asteroid.velocity.x = 0;
-        asteroid.velocity.y = 0;
+        console.warn("Homing asteroid velocity is NaN");
+        debugger;
       }
     }
 
@@ -593,8 +620,14 @@ const update = (deltaTime) => {
 
     for (let j = i + 1; j < asteroids.length; j++) {
       const asteroid2 = asteroids[j];
+      const momentumBefore = calculateTotalMomentum(asteroids);
       if (checkAndResolveCollision(asteroid, asteroid2, showFlash)) {
         playAsteroidCollisionSound();
+        const momentumAfter = calculateTotalMomentum(asteroids);
+        const momentumChange = Math.abs(momentumAfter - momentumBefore);
+        if (momentumChange > 0.00001) {
+          console.warn("Momentum change after collision:", momentumChange);
+        }
       }
     }
 
@@ -717,7 +750,7 @@ const update = (deltaTime) => {
     if (outOfBounds(powerup.position)) {
       powerup.remove = true;
     }
-    if (checkCollisionDiscDisc(powerup, spaceship)) {
+    if (checkCollisionBoxBox(powerup, spaceship)) {
       powerup.remove = true;
       playPowerupSound();
       switch (powerup.type) {
@@ -794,6 +827,8 @@ const update = (deltaTime) => {
     spaceship.velocity.y *= -1;
   }
 
+  spaceship.angularVelocity *= Math.pow(0.01, deltaTime / 1000);
+
   cleanUpEntities(asteroids);
 };
 
@@ -858,10 +893,10 @@ const addAsteroid = (
   asteroid.mass = calculateAsteroidMass(radius, type);
   asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2; // accurate but boring
-  // asteroid.inertia = 1.5;
   asteroid.hp = radius / 2;
-  asteroid.width = width;
-  asteroid.height = height;
+  asteroid.collider = boxColliders ? BOX : DISC;
+  asteroid.width = width || asteroid.radius * 2;
+  asteroid.height = height || asteroid.radius * 2;
 
   if (texture) {
     asteroid.texture = texture;
@@ -889,6 +924,8 @@ const addAsteroid = (
 
   renderer.addEntity(renderer.ASTEROID, asteroid);
   asteroids.push(asteroid);
+
+  console.log("MASS:", asteroid.mass);
 };
 
 const addBullet = (position, rotation, velocity, angularVelocity, friendly) => {
@@ -898,8 +935,10 @@ const addBullet = (position, rotation, velocity, angularVelocity, friendly) => {
   bullet.velocity = velocity;
   bullet.angularVelocity = angularVelocity;
   bullet.mass = BULLET_MASS;
-  bullet.radius = 5;
-  bullet.inertia = (2 / 5) * bullet.mass * bullet.radius ** 2;
+  bullet.collider = BOX;
+  bullet.width = 30;
+  bullet.height = 30;
+  bullet.inertia = (bullet.mass * bullet.height) / 2 / 2;
   bullet.friendly = friendly;
   renderer.addEntity(renderer.BULLET, bullet);
   bullets.push(bullet);
@@ -931,9 +970,10 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.rotation = rotation;
   spaceship.velocity = velocity;
   spaceship.angularVelocity = angularVelocity;
-  spaceship.mass = 10;
+  spaceship.mass = SPACESHIP_MASS;
   spaceship.drag = 1;
   spaceship.maxVelocity = 0.5;
+  spaceship.collider = BOX;
   spaceship.height = 40;
   spaceship.width = 40;
   spaceship.radius = spaceship.width / 2;
@@ -942,6 +982,7 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
     spaceship.maxHp = 1;
   }
   spaceship.hp = spaceship.maxHp;
+  spaceship.invincible = 0;
 
   loadImageIntoTexture(spaceship, spaceshipUrl, spaceship.height, spaceship.width);
 
@@ -958,6 +999,7 @@ const addSpaceshipPart = (position, rotation, type, image, parent) => {
   part.parent = parent;
   part.height = 20;
   part.width = 20;
+
   renderer.addEntity(type, part);
 
   loadImageIntoTexture(part, image, part.height, part.width);
@@ -1009,7 +1051,9 @@ const addPowerup = (type, position, rotation, velocity, angularVelocity) => {
   powerup.rotation = rotation;
   powerup.velocity = velocity;
   powerup.angularVelocity = angularVelocity;
-  powerup.radius = 25;
+  powerup.width = 50;
+  powerup.height = 50;
+  powerup.collider = BOX;
 
   renderer.addEntity(renderer.POWERUP, powerup);
   powerups.push(powerup);
@@ -1132,7 +1176,7 @@ const createFragments = (fragments, asteroid) => {
       velocity.x *= 2;
       velocity.y *= 2;
     }
-    const angularVelocity = randomAngularVelocity(0.005);
+    const angularVelocity = randomAngularVelocity(0.0005);
 
     const radius = Math.max(texture.width, texture.height) / 2;
     const asteroidType = "default";
@@ -1157,7 +1201,7 @@ export const setDisableVoronoiNoise = (draw) => {
   voronoiNoiseDisabled = draw;
 };
 
-const showFlash = (a, b, collisionPoint, normal) => {
+const showFlash = (a, b, collisionPoint, normal, overlap) => {
   if (drawCollisions) {
     renderer.addEntity(renderer.COLLISION, {
       a,

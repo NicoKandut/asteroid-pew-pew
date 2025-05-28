@@ -19,6 +19,8 @@ import iceUrl from "/img/ice.png?url";
 import powerupUrl from "/img/powerup.png?url";
 
 import { drawSeeds } from "../features/VoronoiFracture.js";
+import { angleToUnitVector } from "../util/linalg.js";
+import { getCorners } from "../features/RigidBody.js";
 
 const canvas = document.getElementsByTagName("canvas")[0];
 const context = canvas.getContext("2d");
@@ -94,9 +96,9 @@ const entities = {
 };
 
 let velocityDrawing = false;
-let hitboxDrawing = false;
+let hitboxDrawing = true;
 let trajectoryDrawing = false;
-let drawSplinePaths = true;
+let drawSplinePaths = false;
 let drawVornoiSeeds = false;
 let drawDistanceFields = false;
 
@@ -200,6 +202,7 @@ export const render = () => {
           break;
         case FLAME_PARTICLES:
           drawFlameParticles(entity);
+          break;
         case FLASH:
           drawFlash(entity);
           break;
@@ -250,6 +253,18 @@ export const render = () => {
     }
   }
 
+  if (hitboxDrawing) {
+    context.strokeStyle = "lime";
+    context.lineWidth = 1;
+    context.beginPath();
+    for (const type in entities) {
+      for (const entity of Object.values(entities[type])) {
+        addPathCollider(entity);
+      }
+    }
+    context.stroke();
+  }
+
   if (trajectoryDrawing) ht.drawTrajectory(context);
 };
 
@@ -269,17 +284,6 @@ const drawCircular = (entity) => {
   const drawTexture = drawDistanceFields && voronoiData ? voronoiData.heatMap : texture;
 
   context.drawImage(drawTexture, -radius, -radius, calcWidth, clacHeight);
-
-  if (hitboxDrawing) {
-    context.strokeStyle = RED;
-    context.lineWidth = 1;
-
-    context.beginPath();
-    context.moveTo(0, 0);
-    context.arc(0, 0, radius, 0, 2 * Math.PI);
-
-    context.stroke();
-  }
 
   if (entity.frozen) {
     context.globalAlpha = 0.2;
@@ -378,15 +382,7 @@ export const drawRectangular = (entity) => {
   context.save();
   context.translate(transform.x, transform.y);
   context.rotate(transform.rotation);
-
   context.drawImage(texture, -width / 2, -height / 2, width, height);
-
-  if (hitboxDrawing) {
-    context.strokeStyle = "lime";
-    context.lineWidth = 1;
-    context.strokeRect(-width / 2, -height / 2, width, height);
-  }
-
   context.restore();
 };
 
@@ -426,17 +422,7 @@ export const drawFlames = (entity) => {
   context.fillStyle = "yellow";
   context.fill();
 
-  if (hitboxDrawing) {
-    context.strokeStyle = "lime";
-    context.lineWidth = 1;
-    context.strokeRect(-width, 0, width * 2, height + flicker);
-  }
-
   context.restore();
-  // context.moveTo(entity.position.x, entity.position.y);
-  // for (const target of entity.targets) {
-  //   context.lineTo(target.position.x, target.position.y);
-  // }
 };
 
 export const drawFlameParticles = (entity) => {
@@ -492,20 +478,15 @@ const drawFlash = (entity) => {
 const powerupImage = new Image();
 powerupImage.src = powerupUrl;
 const drawPowerup = (entity) => {
-  const { radius } = entity;
-  const size = radius * 2;
+  const { width, height } = entity;
+
+  const offsetX = width / 2;
+  const offsetY = height / 2;
+
   context.save();
   context.translate(entity.position.x, entity.position.y);
   context.rotate(entity.rotation);
-
-  context.drawImage(powerupImage, -radius, -radius, size, size);
-
-  if (hitboxDrawing) {
-    context.strokeStyle = "lime";
-    context.lineWidth = 1;
-    context.strokeRect(-radius, -radius, size, size);
-  }
-
+  context.drawImage(powerupImage, -offsetX, -offsetY, width, height);
   switch (entity.type) {
     case "health":
       context.textAlign = "center";
@@ -523,8 +504,9 @@ const drawPowerup = (entity) => {
       context.font = "20px Arial";
       context.fillText("🚀", 0, 7);
       break;
+    default:
+      console.warn("Unknown powerup type:", entity.type);
   }
-
   context.restore();
 };
 
@@ -535,6 +517,25 @@ const addPathAngularVelocity = (x, y, angularVelocity, radius, scale = 300) => {
   } else {
     context.moveTo(x + radius * Math.cos(angularVelocity * scale), y + radius * Math.sin(angularVelocity * scale));
     context.arc(x, y, radius, angularVelocity * scale, 0);
+  }
+};
+
+const addPathCollider = (entity) => {
+  switch (entity.collider) {
+    case undefined:
+      // no collider, skip
+      break;
+    case "disc":
+      context.moveTo(entity.position.x + entity.radius, entity.position.y);
+      context.arc(entity.position.x, entity.position.y, entity.radius, 0, 2 * Math.PI);
+      break;
+    case "box":
+      const corners = getCorners(entity);
+      context.moveTo(corners.at(-1).x, corners.at(-1).y);
+      corners.forEach((corner) => context.lineTo(corner.x, corner.y));
+      break;
+    default:
+      console.warn("Unknown collider type:", entity.collider);
   }
 };
 
@@ -551,16 +552,17 @@ const drawCollision = (entity) => {
   context.strokeStyle = "white";
   context.lineWidth = 1;
   context.beginPath();
-  context.moveTo(a.position.x + a.radius, a.position.y);
-  context.arc(a.position.x, a.position.y, a.radius, 0, 2 * Math.PI);
-  context.moveTo(b.position.x + b.radius, b.position.y);
-  context.arc(b.position.x, b.position.y, b.radius, 0, 2 * Math.PI);
+
+  addPathCollider(a);
+  addPathCollider(b);
   context.stroke();
 
   // normal
   context.strokeStyle = "magenta";
   context.lineWidth = 1;
+  context.moveTo(collisionPoint.x + 5, collisionPoint.y);
   context.beginPath();
+  context.arc(collisionPoint.x, collisionPoint.y, 5, 0, 2 * Math.PI);
   context.moveTo(collisionPoint.x, collisionPoint.y);
   context.lineTo(collisionPoint.x + normal.x * 20, collisionPoint.y + normal.y * 20);
   context.stroke();
@@ -586,4 +588,6 @@ const drawCollision = (entity) => {
   addPathAngularVelocity(a.position.x, a.position.y, a.newAngularVelocity, 25);
   addPathAngularVelocity(b.position.x, b.position.y, b.newAngularVelocity, 25);
   context.stroke();
+
+  context.save();
 };

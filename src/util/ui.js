@@ -1,7 +1,7 @@
 import * as renderer from "../renderer/2d.js";
 import { playClickSound, playSubmitSound } from "./sound.js";
-import {setDisableVoronoiNoise} from "../main.js";
-import {setOnlySplitable} from "./random.js"
+import { setDisableVoronoiNoise } from "../main.js";
+import { setOnlySplitable } from "./random.js";
 
 let entityCountView = document.getElementById("entity-count");
 let fpsView = document.getElementById("fps");
@@ -21,6 +21,7 @@ const debugVornoiDistanceFields = document.getElementById("debug-draw-distance")
 const debugVoronoiDisableNoise = document.getElementById("debug-disable-noise");
 const debugVoronoiSplitableOnly = document.getElementById("debug-split-only");
 const debugDrawCollisions = document.getElementById("debug-draw-collisions");
+const debugBoxColliders = document.getElementById("debug-box-colliders");
 const fireRateView = document.getElementById("fire-rate");
 const rocketPiercingView = document.getElementById("rocket-piercing");
 const bulletDamageView = document.getElementById("bullet-damage");
@@ -59,14 +60,30 @@ export const init = (
   reset,
   setExtremeModeEnabled,
   setHitlessModeEnabled,
-  setDrawCollisions
+  setDrawCollisions,
+  setDebugBoxColliders
 ) => {
   initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled);
-  initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume, setDrawCollisions);
+  initPauseMenu(
+    setVolumeModifier,
+    setDesiredFrameTime,
+    setDesiredDeltaTime,
+    setRocketSpeed,
+    resume,
+    setDrawCollisions,
+    setDebugBoxColliders
+  );
   initGameOverMenu(start, reset);
 };
 
-export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled) => {
+export const initMainMenu = (
+  start,
+  reset,
+  setWeaponsEnabled,
+  setMovementEnabled,
+  setExtremeModeEnabled,
+  setHitlessModeEnabled
+) => {
   startButton.addEventListener("click", () => {
     playSubmitSound();
     hideMainMenu();
@@ -111,7 +128,15 @@ export const hideMainMenu = () => {
   mainMenuView.style.display = "none";
 };
 
-export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, resume, setDrawCollisions) => {
+export const initPauseMenu = (
+  setVolumeModifier,
+  setDesiredFrameTime,
+  setDesiredDeltaTime,
+  setRocketSpeed,
+  resume,
+  setDrawCollisions,
+  setDebugBoxColliders
+) => {
   volumeSlider.addEventListener("input", (event) => {
     setVolumeModifier(event.target.value / 100);
   });
@@ -148,15 +173,15 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
   debugVornoiDistanceFields.addEventListener("change", (event) => {
     playClickSound();
     renderer.setDrawDistanceFields(event.target.checked);
-  })
+  });
   debugVoronoiDisableNoise.addEventListener("change", (event) => {
     playClickSound();
     setDisableVoronoiNoise(event.target.checked);
-  })
+  });
   debugVoronoiSplitableOnly.addEventListener("change", (event) => {
     playClickSound();
     setOnlySplitable(event.target.checked);
-  })
+  });
   debugRocketSpeed.addEventListener("change", (event) => {
     playClickSound();
     event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
@@ -175,6 +200,10 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
   debugDrawCollisions.addEventListener("change", (event) => {
     playClickSound();
     setDrawCollisions(event.target.checked);
+  });
+  debugBoxColliders.addEventListener("change", (event) => {
+    playClickSound();
+    setDebugBoxColliders(event.target.checked);
   });
 };
 
@@ -244,7 +273,7 @@ export const updateRocketPiercing = (piercing) => {
 };
 
 export const updateBulletDamage = (damage) => {
-  bulletDamageView.innerText = damage.toFixed(1); 
+  bulletDamageView.innerText = damage.toFixed(1);
 };
 
 export const updateHp = (hp) => {
@@ -263,7 +292,7 @@ export const setMaxHp = (maxHp) => {
 
     hpView.appendChild(hp);
   }
-}
+};
 
 export const updateDebugHeader = (entityCount, fps, ups) => {
   entityCountView.innerText = `${entityCount}`;

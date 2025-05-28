@@ -55,3 +55,10 @@ export const angleOfVector = (vector) => {
 export const length = (vector) => {
   return Math.sqrt(vector.x ** 2 + vector.y ** 2);
 };
+
+export const cross2D = (v, s) => ({
+  x: s * -v.y,
+  y: s * v.x,
+});
+
+export const cross2DVec = (a, b) => a.x * b.y - a.y * b.x;
