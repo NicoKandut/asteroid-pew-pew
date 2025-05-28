@@ -170,7 +170,7 @@ export const checkCollisionDiscBox = (disc, box) => {
 
     const collisionPoint = {
       x: disc.position.x + normal.x * disc.radius,
-      y: disc.position.y +   normal.y * disc.radius,
+      y: disc.position.y + normal.y * disc.radius,
     };
     const overlap = disc.radius - d + 0.00001; // +small epsilon
 
@@ -185,6 +185,18 @@ export const checkCollisionDiscBox = (disc, box) => {
       overlap,
     };
   }
+};
+
+export const checkCollisionBoxDisc = (box, disc) => {
+  const collision = checkCollisionDiscBox(disc, box);
+  if (collision === null || collision === undefined) {
+    return null;
+  }
+
+  collision.normal.x = -collision.normal.x;
+  collision.normal.y = -collision.normal.y;
+
+  return collision;
 };
 
 export const checkCollisionBoxBox = (a, b) => {
@@ -297,7 +309,7 @@ export const checkAndResolveCollision = (a, b, onCollision) => {
   } else if (isDisc(a) && isBox(b)) {
     collision = checkCollisionDiscBox(a, b);
   } else if (isBox(a) && isDisc(b)) {
-    collision = checkCollisionDiscBox(b, a);
+    collision = checkCollisionBoxDisc(a, b);
   } else if (isDisc(a) && isDisc(b)) {
     collision = checkCollisionDiscDisc(a, b);
   }
