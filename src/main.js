@@ -35,7 +35,8 @@ import {
 import asteroid1Url from "/img/Asteroid1.png?url";
 import asteroidSplitIUrl from "/img/asteroid_split.png";
 import asteroidRedUrl from "/img/asteroid_red.png?url";
-import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
+// import asteroidArmoredUrl from "/img/asteroid_armored.png?url";
+import asteroidArmoredUrl from "/img/asteroid_armored.avif?url";
 import asteroidGreenUrl from "/img/asteroid_green.png?url";
 import spaceshipUrl from "/img/Spaceship.png?url";
 import wingLeftUrl from "/img/WingLeft.png?url";
@@ -52,8 +53,8 @@ let controllerIndex = null;
 let voronoiNoiseDisabled = false;
 
 const BULLET_MASS = 1000;
-const SPACESHIP_MASS = 10000;
-const SPACESHIP_FORCE = 5;
+const SPACESHIP_MASS = 1;
+const SPACESHIP_FORCE = 0.0005;
 
 const calculateAsteroidMass = (radius, type) => {
   const density = type === "armored" ? 4 : 3.5;
@@ -144,7 +145,7 @@ let movement = {
   rightController: false,
 };
 
-let drawCollisions = true;
+let drawCollisions = false;
 const setDrawCollisions = (enabled) => {
   drawCollisions = enabled;
 };
@@ -155,6 +156,9 @@ const setDebugBoxColliders = (enabled) => {
   asteroids.forEach((asteroid) => {
     asteroid.collider = enabled ? BOX : DISC;
   });
+  if (spaceship) {
+    spaceship.collider = enabled ? BOX : DISC;
+  }
 };
 
 const main = () => {
@@ -254,12 +258,22 @@ const controllerInput = (now) => {
 };
 
 const initInput = () => {
+  for (const element of document.getElementsByClassName("controller")) {
+    element.style.display = "none";
+  }
+
   window.addEventListener("gamepadconnected", (event) => {
     controllerIndex = event.gamepad.index;
+    for (const element of document.getElementsByClassName("controller")) {
+      element.style.display = "inline";
+    }
   });
 
   window.addEventListener("gamepaddisconnected", () => {
     controllerIndex = null;
+    for (const element of document.getElementsByClassName("controller")) {
+      element.style.display = "none";
+    }
   });
 
   document.addEventListener("keydown", (event) => {
@@ -671,7 +685,6 @@ const update = (deltaTime) => {
             gameState.bulletsHit++;
             bullet.velocity.x *= 0.1;
             bullet.velocity.y *= 0.1;
-            bullet.angularVelocity = randomAngularVelocity(0.02);
             bullet.disabled = true;
             playArmorHitSound();
             setTimeout(() => {
@@ -742,7 +755,7 @@ const update = (deltaTime) => {
     });
     const difference = sub(rocket.position, oldPosition);
     const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
-    console.log("rocket distance", distance);
+    // console.log("rocket distance", distance);
   }
 
   for (const powerup of powerups) {
@@ -782,52 +795,69 @@ const update = (deltaTime) => {
     const distance = Math.sqrt(difference.x ** 2 + difference.y ** 2);
     gameState.distanceTraveled += distance;
     setPropulsionVolume(Math.min(distance / 100, 0.05));
+
+    // collision checks
     for (const asteroid of asteroids) {
       if (checkAndResolveCollision(spaceship, asteroid, showFlash)) {
+        // spaceship.angularVelocity /= 500; // cheat a bit to prevent spaceship from spinning out of control
         handleDamageTaken();
         if (spaceship.hp <= 0) {
           break;
         }
       }
     }
-  }
 
-  // automatic brake
-  if (controllerIndex == null) {
-    if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
+    // reduce invincibility frames
+    if (spaceship.invincible > 0) {
+      spaceship.invincible--;
+    }
+
+    if (spaceship.acceleration.x === 0 && spaceship.acceleration.y === 0) {
       spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
       spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
     }
-  } else {
-    const gamepad = navigator.getGamepads()[controllerIndex];
-    if (
-      Math.abs(gamepad.axes[0]) < 0.01 &&
-      Math.abs(gamepad.axes[1]) < 0.01 &&
-      !movement.forward &&
-      !movement.backward &&
-      !movement.left &&
-      !movement.right &&
-      !movement.forwardController &&
-      !movement.backwardController &&
-      !movement.leftController &&
-      !movement.rightController
-    ) {
-      spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
-      spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
+
+    if (spaceship.angularAcceleration === 0) {
+      spaceship.angularVelocity *= Math.pow(0.25, deltaTime / 1000);
     }
   }
 
+  // // automatic brake
+  // if (controllerIndex == null) {
+  //   if (!movement.forward && !movement.backward && !movement.left && !movement.right) {
+  //     spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
+  //     spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
+  //   }
+  // } else {
+  //   const gamepad = navigator.getGamepads()[controllerIndex];
+  //   if (
+  //     Math.abs(gamepad.axes[0]) < 0.01 &&
+  //     Math.abs(gamepad.axes[1]) < 0.01 &&
+  //     !movement.forward &&
+  //     !movement.backward &&
+  //     !movement.left &&
+  //     !movement.right &&
+  //     !movement.forwardController &&
+  //     !movement.backwardController &&
+  //     !movement.leftController &&
+  //     !movement.rightController
+  //   ) {
+  //     spaceship.velocity.x *= Math.pow(0.25, deltaTime / 1000);
+  //     spaceship.velocity.y *= Math.pow(0.25, deltaTime / 1000);
+  //   }
+  // }
+
+  // spaceship.angularVelocity *= Math.pow(0.01, deltaTime / 1000);
+
+  // bounce off walls
   if (spaceship.position.x < 0 || spaceship.position.x > canvas.width) {
     spaceship.position.x = Math.max(0, Math.min(spaceship.position.x, canvas.width));
     spaceship.velocity.x *= -1;
   }
-
   if (spaceship.position.y < 0 || spaceship.position.y > canvas.height) {
     spaceship.position.y = Math.max(0, Math.min(spaceship.position.y, canvas.height));
     spaceship.velocity.y *= -1;
   }
-
-  spaceship.angularVelocity *= Math.pow(0.01, deltaTime / 1000);
 
   cleanUpEntities(asteroids);
 };
@@ -894,7 +924,7 @@ const addAsteroid = (
   asteroid.radius = type === "armored" ? radius * 2 : radius;
   asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2; // accurate but boring
   asteroid.hp = radius / 2;
-  asteroid.collider = boxColliders ? BOX : DISC;
+  asteroid.collider = boxColliders || type === "armored" ? BOX : DISC;
   asteroid.width = width || asteroid.radius * 2;
   asteroid.height = height || asteroid.radius * 2;
 
@@ -924,8 +954,6 @@ const addAsteroid = (
 
   renderer.addEntity(renderer.ASTEROID, asteroid);
   asteroids.push(asteroid);
-
-  console.log("MASS:", asteroid.mass);
 };
 
 const addBullet = (position, rotation, velocity, angularVelocity, friendly) => {
@@ -936,9 +964,9 @@ const addBullet = (position, rotation, velocity, angularVelocity, friendly) => {
   bullet.angularVelocity = angularVelocity;
   bullet.mass = BULLET_MASS;
   bullet.collider = BOX;
-  bullet.width = 30;
-  bullet.height = 30;
-  bullet.inertia = (bullet.mass * bullet.height) / 2 / 2;
+  bullet.width = 10;
+  bullet.height = 1;
+  bullet.inertia = (bullet.mass * bullet.width) / 2 / 2;
   bullet.friendly = friendly;
   renderer.addEntity(renderer.BULLET, bullet);
   bullets.push(bullet);
@@ -973,7 +1001,7 @@ const addSpaceship = (position, rotation, velocity, angularVelocity) => {
   spaceship.mass = SPACESHIP_MASS;
   spaceship.drag = 1;
   spaceship.maxVelocity = 0.5;
-  spaceship.collider = BOX;
+  spaceship.collider = boxColliders ? BOX : DISC;
   spaceship.height = 40;
   spaceship.width = 40;
   spaceship.radius = spaceship.width / 2;

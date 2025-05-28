@@ -96,7 +96,7 @@ const entities = {
 };
 
 let velocityDrawing = false;
-let hitboxDrawing = true;
+let hitboxDrawing = false;
 let trajectoryDrawing = false;
 let drawSplinePaths = false;
 let drawVornoiSeeds = false;
@@ -254,7 +254,7 @@ export const render = () => {
   }
 
   if (hitboxDrawing) {
-    context.strokeStyle = "lime";
+    context.strokeStyle = "cyan";
     context.lineWidth = 1;
     context.beginPath();
     for (const type in entities) {

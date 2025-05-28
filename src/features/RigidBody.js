@@ -227,7 +227,6 @@ export const checkCollisionBoxBox = (a, b) => {
   }
 
   const corners = [...aInBCornersIndices.map((j) => aCorners[j]), ...bInACornersIndices.map((j) => bCorners[j])];
-  console.log("Collision detected with overlap", overlap, "corners", corners);
 
   if (corners.length === 0) {
     console.warn("No corners found for collision, this should not happen", a, b);
