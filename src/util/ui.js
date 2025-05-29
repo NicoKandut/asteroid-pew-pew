@@ -214,7 +214,7 @@ export const initPauseMenu = (
 };
 
 export const showPauseMenu = () => {
-  pauseMenuView.style.display = "flex";
+  pauseMenuView.style.display = "grid";
 };
 
 export const hidePauseMenu = () => {

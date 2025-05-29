@@ -56,8 +56,10 @@ const SPACESHIP_MASS = 1;
 const SPACESHIP_FORCE = 0.0005;
 
 const calculateAsteroidMass = (radius, type) => {
-  const density = type === "armored" ? 4 : 3.5;
-  return (4 / 3) * Math.PI * radius ** 3 * density;
+  const density = type === "armored" ? 10 : 3.5;
+  return type === "armored"
+    ? (radius * 2) ** 3 * density // box shape
+    : (4 / 3) * Math.PI * radius ** 3 * density; // ball shape
 };
 
 // game state
@@ -652,7 +654,8 @@ const update = (deltaTime) => {
     }
 
     if (asteroid.type === "turret" && !asteroid.frozen) {
-      const nextCooldown = asteroid.bulletIndex % 5 === 0 ? enemyBulletCooldown * 50 : enemyBulletCooldown;
+      const nextCooldown =
+        asteroid.bulletIndex % 5 === 0 ? enemyBulletCooldown * (extremeModeEnabled ? 10 : 50) : enemyBulletCooldown;
       if (now - asteroid.lastBulletTime >= nextCooldown) {
         const direction = {
           x: spaceship.position.x - asteroid.position.x,
@@ -897,7 +900,10 @@ const addAsteroid = (
   asteroid.angularVelocity = angularVelocity;
   asteroid.mass = calculateAsteroidMass(radius, type);
   asteroid.radius = type === "armored" ? radius * 2 : radius;
-  asteroid.inertia = (2 / 5) * asteroid.mass * radius ** 2; // accurate but boring
+  asteroid.inertia =
+    type === "armored"
+      ? (1 / 12) * asteroid.mass * ((asteroid.radius * 2) ** 2 + 4 * (asteroid.radius * 2) ** 2) // box shape
+      : (2 / 5) * asteroid.mass * radius ** 2; // ball shape
   asteroid.hp = radius / 2;
   asteroid.collider = boxColliders || (width > 0 && height > 0) || type === "armored" ? BOX : DISC;
   asteroid.width = width || asteroid.radius * 2;

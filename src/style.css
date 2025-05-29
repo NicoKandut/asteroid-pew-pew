@@ -188,14 +188,54 @@ kbd {
     backdrop-filter: blur(2px);
     padding: 1rem;
     gap: var(--normal-gap);
-    width: 420px;
+    width: 600px;
     filter: var(--drop-shadow-3d);
     border: 2px solid white;
+    grid-template-columns: auto auto auto auto;
+    gap: var(--normal-gap) 1rem;
 
-    > div {
+    > .pause-title {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      grid-column: span 4;
+    }
+
+    h2 {
+      margin: unset;
+      margin-top: 1rem;
+      grid-column: span 4;
+    }
+
+    > div {
+      display: contents;
+
+      label #text {
+        grid-column: span 3;
+      }
+    }
+
+    label {
+      display: contents;
+      white-space: nowrap;
+      > input {
+        text-align: right;
+        place-self: end;
+      }
+
+      &:hover {
+        color: var(--accent);
+      }
+    }
+
+    > label[for="volume"] {
+      display: flex;
+      align-items: center;
+      grid-column: span 4;
+    }
+
+    > button {
+      grid-column: span 4;
     }
   }
 }
@@ -263,7 +303,7 @@ kbd {
 }
 
 @keyframes scanlines {
-  0% {  
+  0% {
     background-position: 0 6px;
   }
 }
