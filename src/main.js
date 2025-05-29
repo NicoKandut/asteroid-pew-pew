@@ -429,8 +429,8 @@ const processEvents = () => {
     const targets = [
       {
         position: {
-          x: spaceship.position.x - Math.cos(spaceship.rotation) * 1000,
-          y: spaceship.position.y - Math.sin(spaceship.rotation) * 1000,
+          x: spaceship.position.x - Math.cos(spaceship.rotation) * 100,
+          y: spaceship.position.y - Math.sin(spaceship.rotation) * 100,
         },
       },
       {
@@ -454,7 +454,14 @@ const processEvents = () => {
       asteroid.torque = 0;
       targets.push(asteroid);
     }
-    targets.push(targets.at(-1));
+
+    const lastDiff = normalize(sub(targets.at(-1).position, targets.at(-2).position));
+    targets.push({
+      position: {
+        x: targets.at(-1).position.x + lastDiff.x * 100,
+        y: targets.at(-1).position.y + lastDiff.y * 100,
+      },
+    });
 
     addRocket({ ...spaceship.position }, spaceship.rotation, { x: 0, y: 0 }, 0, targets);
 
@@ -580,7 +587,7 @@ const handleDamageTaken = () => {
     return;
   }
   spaceship.hp -= 1;
-  spaceship.invincible = 120;
+  spaceship.invincible = 30;
   playSpaceshipCollisionSound();
   if (spaceship.hp >= 0) {
     ui.updateHp(spaceship.hp);

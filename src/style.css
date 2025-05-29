@@ -252,11 +252,20 @@ kbd {
   background: repeating-linear-gradient(
     rgba(0, 0, 0, 0.1) 0px,
     rgba(0, 0, 0, 0.1) 2px,
-    rgba(255, 255, 255, 0.1) 2px,
-    rgba(255, 255, 255, 0.1) 4px
+    rgba(255, 255, 255, 0.1) 3px,
+    rgba(255, 255, 255, 0.1) 5px,
+    rgba(0, 0, 0, 0.1) 6px
   );
+  background-size: 100% 6px;
   background-blend-mode: color-burn;
   z-index: var(--z-index-scanlines);
+  animation: scanlines 0.5s steps(60) infinite;
+}
+
+@keyframes scanlines {
+  0% {  
+    background-position: 0 6px;
+  }
 }
 
 #overlay-blur {

@@ -9,7 +9,7 @@ import powerupUrl from "/audio/powerup.wav?url";
 import backgroundMusicUrl from "/audio/CODEX_2015.mp3?url";
 import armorHit from "/audio/armorHit.wav?url";
 
-let volumeModifier = 0.5;
+let volumeModifier = 0.1;
 export const setVolumeModifier = (value) => {
   backgroundMusic.volume = 0.05 * value;
   volumeModifier = value;

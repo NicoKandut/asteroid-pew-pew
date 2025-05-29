@@ -1,5 +1,10 @@
 import { sub, length } from "../util/linalg.js";
 
+let easingFunctionEnabled = false;
+export const setEasingFunctionEnabled = (enabled) => {
+  easingFunctionEnabled = enabled;
+};
+
 const SAMPLE_STEP = 40;
 const τ = 0.9;
 
@@ -14,12 +19,22 @@ const catmullRom2D = (t, p0, p1, p2, p3) => ({
   y: catmullRom1D(t, p0.y, p1.y, p2.y, p3.y),
 });
 
+const getOffset = (entity, cordLengthProgress) => {
+  for (let offset = 0; offset < entity.targetCordLengths.length; ++offset) {
+    if (cordLengthProgress < entity.targetCordLengths[offset]) {
+      return offset;
+    }
+  }
+  return entity.targetCordLengths.length - 1;
+};
+
 const catmullRomFullPath = (entity, cordLengthProgress) => {
   // lookup progress in arc length table
-  const { v, offset } = lookupArcLength(entity, cordLengthProgress);
+  const v = lookupArcLength(entity, cordLengthProgress);
 
   // adjust with looked up progress
   cordLengthProgress = v * entity.arcLengthTable.cordLength;
+  const offset = getOffset(entity, cordLengthProgress);
 
   // map global cord length progress to local segment
   const segmentStart = offset === 0 ? 0 : entity.targetCordLengths[offset - 1];
@@ -130,7 +145,7 @@ const linear = (x) => x;
 
 const lookupArcLength = (entity, cordLengthProgress) => {
   // find where in the arc length table we are
-  let { v, offset } = entity.arcLengthTable[entity.arcLengthTable.length - 1];
+  let { v } = entity.arcLengthTable[entity.arcLengthTable.length - 1];
   for (let i = 1; i < entity.arcLengthTable.length; ++i) {
     const previous = entity.arcLengthTable[i - 1];
     const next = entity.arcLengthTable[i];
@@ -141,18 +156,17 @@ const lookupArcLength = (entity, cordLengthProgress) => {
 
       // linear interpolation between previous and next, should be smooth enough?
       v = previous.v * (1 - t) + next.v * t;
-      offset = next.offset;
       break;
     }
   }
 
   // Apply easing function
-  v = linear(v);
+  v = easingFunctionEnabled ? easeInCubic(v) : linear(v);
 
   // clamp to prevent out of bounds access
   v = Math.min(1, Math.max(0, v));
 
-  return { v, offset };
+  return v;
 };
 
 export const pathInterpolate = (entity, cordLengthProgress, onTargetReached) => {
@@ -165,7 +179,7 @@ export const pathInterpolate = (entity, cordLengthProgress, onTargetReached) => 
   entity.position = newPosition;
 
   // check if we reached the next target
-  const { v } = lookupArcLength(entity, cordLengthProgress);
+  const v = lookupArcLength(entity, cordLengthProgress);
   cordLengthProgress = v * entity.arcLengthTable.cordLength;
 
   // fire callback if needed
@@ -184,12 +198,48 @@ export const samplePath = (entity) => {
     const len = (i / steps) * entity.arcLengthTable.cordLength;
     entity.pathPoints.push(catmullRomFullPath(entity, len));
   }
+  entity.pathPoints.push(entity.targets[entity.targets.length - 2].position);
+
 
   // visualize arc length table
   // for (let i = 0; i < entity.arcLengthTable.length; ++i) {
   //   const { v } = entity.arcLengthTable[i];
   //   entity.pathPoints.push(catmullRomFullPath(entity, v * entity.arcLengthTable.cordLength));
   // }
+  // entity.pathPoints.push(entity.targets[entity.targets.length - 2].position);
 
-  entity.pathPoints.push(entity.targets[entity.targets.length - 2].position);
+  // console.log("Path points:", entity.pathPoints.length);
+
+  // create debug numbers
+  // const debug = {
+  //   cordLength: [],
+  //   v: [],
+  //   offset: [],
+  //   adjustedCordLength: [],
+  //   progressInSegment: [],
+  // };
+  // let csv = "cordlength,v,offset,adjustedCordLength,progressInSegment\n";
+  // for (let i = 0; i < steps; ++i) {
+  //   const cordLength = (i / steps) * entity.arcLengthTable.cordLength;
+  //   debug.cordLength.push(cordLength);
+
+  //   const { v, offset } = lookupArcLength(entity, cordLength);
+  //   debug.v.push(v);
+  //   debug.offset.push(offset);
+
+  //   const adjustedCordLength = v * entity.arcLengthTable.cordLength;
+  //   debug.adjustedCordLength.push(adjustedCordLength);
+
+  //   const segmentStart = offset === 0 ? 0 : entity.targetCordLengths[offset - 1];
+  //   const segmentEnd = entity.targetCordLengths[offset];
+  //   const cordLengthInSegment = cordLength - segmentStart;
+  //   const segmentLength = segmentEnd - segmentStart;
+  //   const progressInSegment = cordLengthInSegment / segmentLength;
+  //   debug.progressInSegment.push(progressInSegment);
+
+  //   const csvRow = `${cordLength},${v},${offset},${adjustedCordLength},${progressInSegment}\n`;
+  //   csv += csvRow;
+  // }
+
+  // console.log("Debug CSV:\n", csv);
 };
