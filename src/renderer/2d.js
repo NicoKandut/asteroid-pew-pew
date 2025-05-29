@@ -141,6 +141,7 @@ export const removeAllEntities = () => {
   for (const type in entities) {
     entities[type] = {};
   }
+  ht.removeAllTrajectory();
 };
 
 const boomFrames = [];

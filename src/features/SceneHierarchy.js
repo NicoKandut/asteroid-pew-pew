@@ -8,9 +8,7 @@ export const calcTransform = (entity) => {
 
   if (parent == null) return offset;
 
-  const parentTransform = calcTransform(
-    parent
-  );
+  const parentTransform = calcTransform(parent);
 
   const c = Math.cos(parentTransform.rotation);
   const s = Math.sin(parentTransform.rotation);
@@ -40,14 +38,18 @@ export const addTrajectory = (id, position) => {
 
 export const removeTrajectory = (id) => {
   delete trajectoryHistory[id];
-}
+};
+
+export const removeAllTrajectory = () => {
+  trajectoryHistory = new Map();
+};
 
 export const drawTrajectory = (context) => {
   for (const id in trajectoryHistory) {
     const history = trajectoryHistory[id];
 
     if (!history || history.length < 2) continue;
-  
+
     context.beginPath();
     for (let i = 0; i < history.length; i++) {
       const point = history[i];
@@ -57,9 +59,9 @@ export const drawTrajectory = (context) => {
         context.lineTo(point.x, point.y);
       }
     }
-  
-    context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+
+    context.strokeStyle = "rgba(255, 255, 255, 0.5)";
     context.lineWidth = 1;
     context.stroke();
   }
-}
+};
