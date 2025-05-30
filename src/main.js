@@ -131,6 +131,16 @@ const setHitlessModeEnabled = (enabled) => {
   hitlessModeEnabled = enabled;
 };
 
+let autofireBulletsEnabled = false;
+const setAutofireBullets = (enabled) => {
+  autofireBulletsEnabled = enabled;
+};
+
+let autofireRocketsEnabled = false;
+const setAutofireRockets = (enabled) => {
+  autofireRocketsEnabled = enabled;
+}
+
 // powerups
 let powerupCooldown = 10000;
 let lastPowerupTime = 0;
@@ -181,7 +191,9 @@ const main = () => {
     setExtremeModeEnabled,
     setHitlessModeEnabled,
     setDrawCollisions,
-    setDebugBoxColliders
+    setDebugBoxColliders,
+    setAutofireBullets,
+    setAutofireRockets
   );
   // playBackgroundMusic();
 };
@@ -216,12 +228,12 @@ const controllerInput = (now) => {
     lastMenueToggle = now;
   }
   if (gamepad.buttons[7].pressed && gamepad.buttons[7].value >= 0.5) {
-    shootingBullets = !paused && weaponsEnabled;
+    shootingBullets = !paused;
   } else {
     shootingBullets = false;
   }
   if (gamepad.buttons[6].pressed && gamepad.buttons[6].value >= 0.5) {
-    shootingRockets = !paused && weaponsEnabled;
+    shootingRockets = !paused;
   } else {
     shootingRockets = false;
   }
@@ -283,10 +295,10 @@ const initInput = () => {
         togglePause();
         break;
       case " ":
-        shootingBullets = !paused && weaponsEnabled;
+        shootingBullets = !paused;
         break;
       case "Shift":
-        shootingRockets = !paused && weaponsEnabled;
+        shootingRockets = !paused;
         break;
       case "ArrowUp":
       case "w":
@@ -408,7 +420,7 @@ const doFrame = () => {
 
 const processEvents = () => {
   // bullets
-  if (shootingBullets && now - lastBulletTime >= bulletCooldown && spaceship) {
+  if ((shootingBullets || autofireBulletsEnabled) && weaponsEnabled && now - lastBulletTime >= bulletCooldown && spaceship) {
     const rotation = spaceship.rotation + (Math.random() - 0.5) * 0.1;
     const offsetMultiplier = bulletIndex % 2 === 0 ? -1 : 1;
     const bulletPosition = angleToUnitVector(spaceship.rotation + (Math.PI / 2) * offsetMultiplier);
@@ -427,7 +439,7 @@ const processEvents = () => {
   }
 
   // rockets
-  if (shootingRockets && now - lastRocketTime >= rocketCooldown && spaceship) {
+  if ((shootingRockets || autofireRocketsEnabled) && weaponsEnabled && now - lastRocketTime >= rocketCooldown && spaceship) {
     const targets = [
       {
         position: {
