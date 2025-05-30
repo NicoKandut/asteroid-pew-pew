@@ -9,6 +9,8 @@ let fpsView = document.getElementById("fps");
 let upsView = document.getElementById("ups");
 let targetFpsView = document.getElementById("target-fps");
 let targetUpsView = document.getElementById("target-ups");
+let autofireBulletsView = document.getElementById("autofire-bullets");
+let autofireRocketsView = document.getElementById("autofire-rockets");
 let pauseMenuView = document.getElementById("pause-menu");
 const mainMenuView = document.getElementById("main-menu");
 const pauseResumeButton = document.getElementById("pause-resume");
@@ -63,7 +65,9 @@ export const init = (
   setExtremeModeEnabled,
   setHitlessModeEnabled,
   setDrawCollisions,
-  setDebugBoxColliders
+  setDebugBoxColliders,
+  setAutofireBullets,
+  setAutofireRockets
 ) => {
   initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled);
   initPauseMenu(
@@ -73,7 +77,9 @@ export const init = (
     setRocketSpeed,
     resume,
     setDrawCollisions,
-    setDebugBoxColliders
+    setDebugBoxColliders,
+    setAutofireBullets,
+    setAutofireRockets
   );
   initGameOverMenu(start, reset);
 };
@@ -137,7 +143,9 @@ export const initPauseMenu = (
   setRocketSpeed,
   resume,
   setDrawCollisions,
-  setDebugBoxColliders
+  setDebugBoxColliders,
+  setAutofireBullets,
+  setAutofireRockets
 ) => {
   volumeSlider.addEventListener("input", (event) => {
     setVolumeModifier(event.target.value / 100);
@@ -151,6 +159,14 @@ export const initPauseMenu = (
     playClickSound();
     event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
     setDesiredDeltaTime(1000 / event.target.value);
+  });
+  autofireBulletsView.addEventListener("change", (event) => {
+    playClickSound();
+    setAutofireBullets(event.target.checked);
+  });
+  autofireRocketsView.addEventListener("change", (event) => {
+    playClickSound();
+    setAutofireRockets(event.target.checked);
   });
   debugVelocityCheckbox.addEventListener("change", (event) => {
     playClickSound();
