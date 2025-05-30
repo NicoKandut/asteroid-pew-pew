@@ -1,5 +1,11 @@
 const canvas = document.getElementsByTagName("canvas")[0];
 
+let onlySplitable = false;
+
+export const setOnlySplitable = (draw) => {
+  onlySplitable = draw;
+};
+
 export const randomPosition = () => {
   return {
     x: Math.random() * canvas.width,
@@ -81,13 +87,13 @@ export const randomRangeWithProbability = (values, probabilities) => {
 };
 
 export const randomAsteroidType = () => {
-  const types = ["default", "homing", "armored", "turret"];
-  const probabilities = [0.85, 0.05, 0.05, 0.05];
-  return randomRangeWithProbability(types, probabilities);
+  const types = ["default", "split", "homing", "armored", "turret"];
+  const probabilities = [0.8, 0.05, 0.05, 0.05, 0.05];
+  return onlySplitable ? "split" : randomRangeWithProbability(types, probabilities);
 };
 
 export const randomAsteroidTypeExtreme = () => {
-  const types = ["homing", "armored", "turret"];
-  const probabilities = [0.34, 0.33, 0.33];
+  const types = ["split", "homing", "armored", "turret"];
+  const probabilities = [0.25, 0.25, 0.25, 0.25];
   return randomRangeWithProbability(types, probabilities);
 };

@@ -1,7 +1,14 @@
 //Settings
 const seedCount = 5;
 const bias = 0.7;
-const scale = 10;
+const scale = 2;
+
+export function prepareVornoi(entity, impactEntity, disableNoise)
+{
+    entity.fractureSeeds = generateVoronoiSeeds(calculateImpactPoint(entity, impactEntity), entity.radius);
+    const noiseFn = disableNoise ? null : generateNoise(entity);
+    entity.voronoiData = computeVoronoiField(entity, noiseFn);
+}
 
 export function generateVoronoiSeeds(impactPoint, radius) {
     const seeds = [];
@@ -64,7 +71,7 @@ export function computeVoronoiField(entity, noiseFn = null) {
     const width = radius * 2;
     const height = radius * 2;
 
-    const cellMap = new Uint8Array(width * height);
+    const cellMap = new Int16Array(width * height).fill(-1);
 
     const offscreen = document.createElement('canvas');
     offscreen.width = width;
@@ -89,8 +96,8 @@ export function computeVoronoiField(entity, noiseFn = null) {
 
             for (let i = 0; i < fractureSeeds.length; i++) {
                 const seed = fractureSeeds[i];
-                let dx = (x - cx) - seed.x;
-                let dy = (y - cy) - seed.y;
+                let dx = lx - seed.x;
+                let dy = ly - seed.y;
 
                 if (noiseFn) {
                     const n = noiseFn(x, y);
@@ -175,23 +182,38 @@ export function generateNoise(entity) {
     return noiseFn;
 }
 
-export function createFragementTexture(originalTexture, cellMap, entity) {
+export function createFragementTexture(entity) {
     const fragments = [];
+    const originalTexture = entity.texture;
+    const cellMap = entity.voronoiData.cellMap;
 
     const width = entity.radius * 2;
     const height = entity.radius * 2;
 
-    if (cellMap.length !== width * height) {
-        console.error('Cell map size mismatch');
-    }
-
     for (let i = 0; i < seedCount; i++) {
+        let minX = width, minY = height, maxX = 0, maxY = 0
+
+        for (let p = 0; p < cellMap.length; p++) {
+            if (cellMap[p] === -1 || cellMap[p] !== i) continue;
+
+            const currentX = p % width;
+            const currentY = Math.floor(p / width);
+
+            minX = currentX < minX ? currentX : minX;
+            minY = currentY < minY ? currentY : minY;
+            maxX = currentX > maxX ? currentX : maxX;
+            maxY = currentY > maxY ? currentY : maxY;
+        }
+
+        const fragWidth = (maxX - minX) + 1;
+        const fragHeight = (maxY - minY) + 1;
+
         const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = fragWidth;
+        canvas.height = fragHeight;
         const ctx = canvas.getContext('2d');
 
-        const fragImage = ctx.createImageData(width, height);
+        const fragImage = ctx.createImageData(fragWidth, fragHeight);
         let fragPixels = fragImage.data;
 
         const srcCtx = originalTexture.getContext('2d');
@@ -201,25 +223,23 @@ export function createFragementTexture(originalTexture, cellMap, entity) {
         for (let p = 0; p < cellMap.length; p++) {
             if (cellMap[p] !== i) continue;
 
-            const baseIndex = p * 4;
-            fragPixels[baseIndex] = srcPixels[baseIndex];
-            fragPixels[baseIndex + 1] = srcPixels[baseIndex + 1];
-            fragPixels[baseIndex + 2] = srcPixels[baseIndex + 2];
-            fragPixels[baseIndex + 3] = srcPixels[baseIndex + 3];
+            const currentX = p % width;
+            const currentY = Math.floor(p / width);
+            const fragX = currentX - minX;
+            const fragY = currentY - minY;
+
+            const fragIndex = (fragY * fragWidth + fragX) * 4;
+            const srcIndex = p * 4;
+
+            fragPixels[fragIndex] = srcPixels[srcIndex];
+            fragPixels[fragIndex + 1] = srcPixels[srcIndex + 1];
+            fragPixels[fragIndex + 2] = srcPixels[srcIndex + 2];
+            fragPixels[fragIndex + 3] = srcPixels[srcIndex + 3];
         }
 
         ctx.putImageData(fragImage, 0, 0);
-
-        //downloadCanvas(canvas, `./fragment_${i}.png`);
         fragments.push(canvas);
     }
 
     return fragments;
-}
-
-function downloadCanvas(canvas, filename = 'fragment.png') {
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = canvas.toDataURL();
-    link.click();
 }

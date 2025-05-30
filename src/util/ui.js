@@ -1,5 +1,8 @@
 import * as renderer from "../renderer/2d.js";
 import { playClickSound, playSubmitSound } from "./sound.js";
+import { setDisableVoronoiNoise } from "../main.js";
+import { setOnlySplitable } from "./random.js";
+import { setEasingFunctionEnabled } from "../features/PathInterpol.js";
 
 let entityCountView = document.getElementById("entity-count");
 let fpsView = document.getElementById("fps");
@@ -17,6 +20,12 @@ const debugDrawTrajectory = document.getElementById("debug-trajectory");
 const debugSplinePaths = document.getElementById("debug-spline-paths");
 const debugRocketSpeed = document.getElementById("debug-rocket-speed");
 const debugVoronoiSeeds = document.getElementById("debug-draw-seeds");
+const debugVornoiDistanceFields = document.getElementById("debug-draw-distance");
+const debugVoronoiDisableNoise = document.getElementById("debug-disable-noise");
+const debugVoronoiSplitableOnly = document.getElementById("debug-split-only");
+const debugDrawCollisions = document.getElementById("debug-draw-collisions");
+const debugBoxColliders = document.getElementById("debug-box-colliders");
+const debugEasingFunctionEnabled = document.getElementById("debug-easing-function-enabled");
 const fireRateView = document.getElementById("fire-rate");
 const rocketPiercingView = document.getElementById("rocket-piercing");
 const bulletDamageView = document.getElementById("bullet-damage");
@@ -32,9 +41,11 @@ const volumeSlider = document.getElementById("volume");
 const modePacifistView = document.getElementById("mode-pacifist");
 const modeStationaryView = document.getElementById("mode-stationary");
 const modeExtremeView = document.getElementById("mode-extreme");
+const modeHitlessView = document.getElementById("mode-hitless");
 const markPacifistView = document.getElementById("mark-pacifist");
 const markStationaryView = document.getElementById("mark-stationary");
 const markExtremeView = document.getElementById("mark-extreme");
+const markHitlessView = document.getElementById("mark-hitless");
 const backToMainMenuButton = document.getElementById("back-to-main-menu");
 const pauseBackToMainMenuButton = document.getElementById("pause-back-to-main-menu");
 const controlsMoveView = document.getElementById("controls-move");
@@ -53,14 +64,34 @@ export const init = (
   setAutoFireRockets,
   resume,
   reset,
-  setExtremeModeEnabled
+  setExtremeModeEnabled,
+  setHitlessModeEnabled,
+  setDrawCollisions,
+  setDebugBoxColliders
 ) => {
-  initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled);
-  initPauseMenu(setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, setAutoFire, setAutoFireRockets, resume);
+  initMainMenu(start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled, setHitlessModeEnabled);
+  initPauseMenu(
+    setVolumeModifier,
+    setDesiredFrameTime,
+    setDesiredDeltaTime,
+    setRocketSpeed,
+    resume,
+    setDrawCollisions,
+    setDebugBoxColliders,
+    setAutoFire,
+    setAutoFireRockets
+  );
   initGameOverMenu(start, reset);
 };
 
-export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled, setExtremeModeEnabled) => {
+export const initMainMenu = (
+  start,
+  reset,
+  setWeaponsEnabled,
+  setMovementEnabled,
+  setExtremeModeEnabled,
+  setHitlessModeEnabled
+) => {
   startButton.addEventListener("click", () => {
     playSubmitSound();
     hideMainMenu();
@@ -91,6 +122,10 @@ export const initMainMenu = (start, reset, setWeaponsEnabled, setMovementEnabled
     playClickSound();
     setExtremeModeEnabled(event.target.checked);
   });
+  modeHitlessView.addEventListener("change", (event) => {
+    playClickSound();
+    setHitlessModeEnabled(event.target.checked);
+  });
 };
 
 export const showMainMenu = () => {
@@ -101,7 +136,17 @@ export const hideMainMenu = () => {
   mainMenuView.style.display = "none";
 };
 
-export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesiredDeltaTime, setRocketSpeed, setAutoFire, setAutoFireRockets, resume) => {
+export const initPauseMenu = (
+  setVolumeModifier,
+  setDesiredFrameTime,
+  setDesiredDeltaTime,
+  setRocketSpeed,
+  resume,
+  setDrawCollisions,
+  setDebugBoxColliders,
+  setAutoFire, 
+  setAutoFireRockets
+) => {
   volumeSlider.addEventListener("input", (event) => {
     setVolumeModifier(event.target.value / 100);
   });
@@ -142,7 +187,19 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
   debugVoronoiSeeds.addEventListener("change", (event) => {
     playClickSound();
     renderer.setDrawVoronoiSeeds(event.target.checked);
-  })
+  });
+  debugVornoiDistanceFields.addEventListener("change", (event) => {
+    playClickSound();
+    renderer.setDrawDistanceFields(event.target.checked);
+  });
+  debugVoronoiDisableNoise.addEventListener("change", (event) => {
+    playClickSound();
+    setDisableVoronoiNoise(event.target.checked);
+  });
+  debugVoronoiSplitableOnly.addEventListener("change", (event) => {
+    playClickSound();
+    setOnlySplitable(event.target.checked);
+  });
   debugRocketSpeed.addEventListener("change", (event) => {
     playClickSound();
     event.target.value = Math.max(0, Math.min(1000, Number(event.target.value)));
@@ -158,10 +215,22 @@ export const initPauseMenu = (setVolumeModifier, setDesiredFrameTime, setDesired
     hidePauseMenu();
     showMainMenu();
   });
+  debugDrawCollisions.addEventListener("change", (event) => {
+    playClickSound();
+    setDrawCollisions(event.target.checked);
+  });
+  debugBoxColliders.addEventListener("change", (event) => {
+    playClickSound();
+    setDebugBoxColliders(event.target.checked);
+  });
+  debugEasingFunctionEnabled.addEventListener("change", (event) => {
+    playClickSound();
+    setEasingFunctionEnabled(event.target.checked);
+  });
 };
 
 export const showPauseMenu = () => {
-  pauseMenuView.style.display = "flex";
+  pauseMenuView.style.display = "grid";
 };
 
 export const hidePauseMenu = () => {
@@ -190,10 +259,11 @@ export const hideGameOverMenu = () => {
   gameOverView.style.display = "none";
 };
 
-export const updateGameOverMenu = (weaponsEnabled, movementEnabled, isExtreme, current, best) => {
+export const updateGameOverMenu = (weaponsEnabled, movementEnabled, isExtreme, isHitless, current, best) => {
   markPacifistView.style.display = weaponsEnabled ? "none" : "block";
   markStationaryView.style.display = movementEnabled ? "none" : "block";
   markExtremeView.style.display = isExtreme ? "block" : "none";
+  markHitlessView.style.display = isHitless ? "block" : "none";
 
   setGameOverStat(timePlayedView, current.timePlayed / 1000, best.timePlayed / 1000, "s", 1);
   setGameOverStat(asteroidsDestroyedView, current.asteroidsDestroyed, best.asteroidsDestroyed);
@@ -225,12 +295,24 @@ export const updateRocketPiercing = (piercing) => {
 };
 
 export const updateBulletDamage = (damage) => {
-  bulletDamageView.innerText = damage.toFixed(1); 
+  bulletDamageView.innerText = damage.toFixed(1);
 };
 
 export const updateHp = (hp) => {
   for (let i = 0; i < hpView.children.length; i++) {
     hpView.children.item(i).style.color = i < hp ? "red" : "grey";
+  }
+};
+
+export const setMaxHp = (maxHp) => {
+  hpView.innerHTML = "";
+
+  for (let i = 0; i < maxHp; i++) {
+    const hp = document.createElement("li");
+    hp.innerText = "❤";
+    hp.style.color = "red";
+
+    hpView.appendChild(hp);
   }
 };
 
